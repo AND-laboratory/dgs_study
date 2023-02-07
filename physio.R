@@ -1,3 +1,5 @@
+############## DGS PHYSIO ANALYSIS ###############
+
 library(utils)
 workdir <- 'S:/MNHS-Psych/ANDL-Lab-DGS-Study/data_for_manuscripts/tim_task_paper'
 dgs_hr <- read.csv(file.path(workdir,"/dgs_hr.csv", fsep=""))
@@ -54,7 +56,7 @@ ggplot(hr_long_reduced, aes(x = condition, y = hr, group = dgs_id)) +
 qbl_task <-  na.omit(dgs_hr_long[which(dgs_hr_long$condition=="questionnaire_hr" | dgs_hr_long$condition=="task_hr"), ])
 qbl_task <- filter(qbl_task, dgs_id!="DGS130")
 t.test(hr ~ condition, data = qbl_task, paired = TRUE)
-#t = -5.5882, df = 43, p-value < .001
+#t = -5.5882, df = 43, p-value < .001 # This is two sided, try using alternative one sided (don't know how to do this in long format)
 
 ### Questionnaire baseline vs. self-connected
 qbl_selfc <-  na.omit(dgs_hr_long[which(dgs_hr_long$condition=="questionnaire_hr" | dgs_hr_long$condition=="selfconn_hr"), ])
@@ -377,11 +379,14 @@ ggplot(salivalong, aes(x = timepoint, y = Cort_wi, colour = id)) +
 
 T1_T2 <-  salivalong[which(salivalong$timepoint=="1" | salivalong$timepoint=="2"), ]
 
-t.test(DHEA_wi ~ timepoint, data = T1_T2, paired = TRUE)
-t.test(CRP_wi ~ timepoint, data = T1_T2, paired = TRUE)
-t.test(IL6_wi ~ timepoint, data = T1_T2, paired = TRUE)
-t.test(Cort_wi ~ timepoint, data = T1_T2, paired = TRUE)
+t.test(DHEA_wi ~ timepoint, data = T1_T2, alternative = "less", paired = TRUE)
+t.test(CRP_wi ~ timepoint, data = T1_T2, alternative = "less",  paired = TRUE)
+t.test(IL6_wi ~ timepoint, data = T1_T2, alternative = "less", paired = TRUE)
+t.test(Cort_wi ~ timepoint, data = T1_T2, alternative = "less", paired = TRUE)
+# these used to be two sided like below, have I now done one sided in long 
+# format correctly ( think it's just alternative = "less" since less timepoint should be lower)??
 
+# CONSIDER DOING LIKE SOS AND CHOOSING WHICHEVER PEAK IS HIGHER, T2 or T3!!!!
 
 T1_T3 <-  salivalong[which(salivalong$timepoint=="1" | salivalong$timepoint=="3"), ]
 T1_T3 <- filter(T1_T3, ID !="DGS165")
