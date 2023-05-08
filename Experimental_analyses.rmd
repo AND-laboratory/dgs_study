@@ -1,0 +1,100 @@
+---
+title: "DGS - Paper components"
+author: "Rachael Martin"
+date: "`r Sys.Date()`"
+output:
+  tufte::tufte_html: 
+    toc: true
+---
+
+
+# Import
+
+```{r}
+library(haven)
+library(data.table)
+library(JWileymisc)
+library(psych)
+
+db <- as.data.table(read.csv("experimental_scored_data.csv"))
+```
+
+# hypotheses diagram
+```{r}
+f <- function(x) 0 + (1*x) - (1*x*x)
+tmp <- data.frame(x=0:1, y=f(0:1))
+
+line_df <- data.frame(x = c(0, 1), y = c(0, 0.4))
+
+# visualisation
+p <- ggplot() + 
+  geom_line(data = line_df, aes(x = x, y = y), color = "#FF9339") +
+  stat_function(data = tmp, fun = f, color = "#2E74AA") + 
+  xlab("Minority Stress Experiences / Depressive Symptoms") + ylab("Biological and Subjective Stress Reactivity") +
+  ggtitle("                 Hypothetical Relationships between Minority Stress Experiences 
+                                        and Reactivity to Social Stressor") +
+  geom_text(aes(x = 0.12, y = 0.25, label = "Non-linear representation 
+(exploratory hypothesis)"), color = "#2E74AA", size = 4) +
+  geom_text(aes(x = 0.9, y = 0.23, label = "Linear representation"), color = "#FF9339", size = 4) +
+  annotate(geom = "curve", x = 0.1, y = 0.21, xend = 0.15, yend = 0.18, curvature = .2, arrow = arrow(length = unit(2, "mm")), color = "#2E74AA") +
+  annotate(geom = "curve", x = 0.82, y = 0.24, xend = 0.75, yend = 0.28, curvature = .2, arrow = arrow(length = unit(2, "mm")), color = "#FF9339")+
+ theme_classic()
+p <- p + theme(axis.text.x = element_blank(),
+               axis.text.y = element_blank())
+ggsave("hypothetical_diagram.png", width = 8, height = 6, dpi = 300)
+
+p
+```
+# template for analysis
+
+Note. Ensure the database with the dheq v3 scoring is used
+```{r}
+# 1a. reactivity ~ minority stress experiences
+## EDS ~ reactivity
+lm_EDS_disconnect <- lm(Disconnect_contrast ~ EDS_Total, data = db) ## flip these to make EDS x and stress Y
+lm_EDS_other <- lm(Other_contrast ~ EDS_Total, data = db)
+lm_EDS_HR <- lm( ~ EDS_Total, data = db)
+lm_EDS_CRP <- lm( ~ EDS_Total , data = db)
+lm_EDS_DHEA <- lm( ~ EDS_Total , data = db) ## make a list for michelle what we need still
+## DHEQ ~ reactivity
+lm_DHEQ_disconnect <- lm(Disconnect_contrast ~ DHEQ_V3_Total_Avg, data = db)
+lm_DHEQ_other <- lm(Other_contrast ~ DHEQ_V3_Total_Avg, data = db)
+lm_DHEQ_HR <- lm( ~ DHEQ_V3_Total_Avg, data = db)
+lm_DHEQ_CRP <- lm( ~ DHEQ_V3_Total_Avg, data = db)
+lm_DHEQ_DHEA <- lm( ~ DHEQ_V3_Total_Avg , data = db)
+
+# 1a. exploratory: reactivity ~ poly, 2(minority stress experiences)
+## EDS ~ reactivity
+poly_EDS_disconnect <- lm(Disconnect_contrast ~ poly(EDS_Total, 2), data = db)
+poly_EDS_other <- lm(Other_contrast ~ poly(EDS_Total, 2), data = db)
+poly_EDS_HR <- lm( ~ poly(EDS_Total, 2), data = db)
+poly_EDS_CRP <- lm( ~ poly(EDS_Total, 2), data = db)
+poly_EDS_DHEA <- lm( ~ poly(EDS_Total, 2), data = db)
+## DHEQ ~ reactivity
+poly_DHEQ_disconnect <- lm(Disconnect_contrast ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
+poly_DHEQ_other <- lm(Other_contrast ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
+poly_DHEQ_HR <- lm( ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
+poly_DHEQ_CRP <- lm( ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
+poly_DHEQ_DHEA <- lm( ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
+
+# 1b. reactivity ~ depression
+lm_DASS_disconnect <- lm(Disconnect_contrast ~ DASS21_CDepressionFINAL, data = db)
+lm_EDS_other <- lm(Other_contrast ~ DASS21_CDepressionFINAL, data = db)
+lm_EDS_HR_disconnect <- lm( ~ DASS21_CDepressionFINAL, data = db)
+lm_EDS_HR_other <- lm( ~ DASS21_CDepressionFINAL, data = db)
+lm_EDS_CRP <- lm( ~ DASS21_CDepressionFINAL, data = db)
+lm_EDS_DHEA <- lm( ~ DASS21_CDepressionFINAL, data = db) 
+
+# 1b exploratory: reactivity ~ poly, 2(depression)
+poly_DASS_disconnect <- lm(Disconnect_contrast ~ poly(DASS21_CDepressionFINAL, 2), data = db)
+poly_DASS_other <- lm(Other_contrast ~ poly(DASS21_CDepressionFINAL, 2), data = db)
+poly_DASS_HR_disconnect <- lm( ~ poly(DASS21_CDepressionFINAL, 2), data = db)
+poly_DASS_HR_other <- lm( ~ poly(DASS21_CDepressionFINAL, 2), data = db)
+poly_DASS_CRP <- lm( ~ poly(DASS21_CDepressionFINAL, 2), data = db)
+poly_DASS_DHEA <- lm( ~ poly(DASS21_CDepressionFINAL, 2), data = db)
+
+# 2a reactivity ~ social support x minority stress
+
+```
+
+
