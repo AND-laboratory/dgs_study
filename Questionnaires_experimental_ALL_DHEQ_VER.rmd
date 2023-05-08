@@ -1,0 +1,1180 @@
+---
+title: "DGS - Questionnaires for Experimental Group"
+author: "Rachael Martin"
+date: "`r Sys.Date()`"
+output:
+  tufte::tufte_html: 
+    toc: true
+---
+
+# Notes
+
+Cases whereby participants were missing data for a single item were overcome through use of adjusted means (via rowMeans function)
+
+Cases whereby participants are missing data for an entire measure and may require imputation are decided on by the individual researcher conducting analysis
+
+The SMA is not scored as our adapted version is one single variable
+
+# Import
+
+```{r}
+library(haven)
+library(data.table)
+library(JWileymisc)
+library(psych)
+
+db <- as.data.table(read.csv("experimental_data_COPYforR.csv"))
+```
+# Converting all to numeric
+```{r}
+## SCS
+cols_reversed <- c("SCS.R.1_3", "SCS.R.1_6", "SCS.R.1_7", "SCS.R.1_9", "SCS.R.1_11", "SCS.R.1_13", "SCS.R.1_15", "SCS.R.1_17", "SCS.R.1_18", "SCS.R.1_20")
+cols_nonreversed <- c("SCS.R.1_1", "SCS.R.1_2", "SCS.R.1_4", "SCS.R.1_5", "SCS.R.1_8", "SCS.R.1_10", "SCS.R.1_12", "SCS.R.1_14", "SCS.R.1_16", "SCS.R.1_19")
+
+# Reverse columns
+db[, (cols_reversed) := lapply(.SD, function(x) 5 - as.numeric(x)), .SDcols = cols_reversed]
+
+# Convert non-reversed columns to numeric
+db[, (cols_nonreversed) := lapply(.SD, as.numeric), .SDcols = cols_nonreversed]
+
+cols_to_reverse <- c("SCS.R.2_3", "SCS.R.2_6", "SCS.R.2_7", "SCS.R.2_9", "SCS.R.2_11", 
+                     "SCS.R.2_13", "SCS.R.2_15", "SCS.R.2_17", "SCS.R.2_18", "SCS.R.2_20")
+                     
+db[, (cols_to_reverse) := lapply(.SD, function(x) 5 - as.numeric(x)), .SDcols = cols_to_reverse]
+
+cols_to_numeric <- c("SCS.R.2_1", "SCS.R.2_2", "SCS.R.2_4", "SCS.R.2_5", "SCS.R.2_8", 
+                     "SCS.R.2_10", "SCS.R.2_12", "SCS.R.2_14", "SCS.R.2_16", "SCS.R.2_19")
+
+db[, (cols_to_numeric) := lapply(.SD, as.numeric), .SDcols = cols_to_numeric]
+
+## SSES
+
+db$SSES.1 <- as.numeric(db$SSES.1)
+db$SSES.2 <- as.numeric(db$SSES.2)
+db$SSES.3 <- as.numeric(db$SSES.3)
+db$SSES.4 <- as.numeric(db$SSES.4)
+db$SSES.5 <- as.numeric(db$SSES.5)
+db$SSES.6 <- as.numeric(db$SSES.6)
+db$SSES.7 <- as.numeric(db$SSES.7)
+
+## SSGLBT
+
+db$SSGLBT.1 <- as.numeric(db$SSGLBT.1)
+db$SSGLBT.2 <- as.numeric(db$SSGLBT.2)
+db$SSGLBT.3 <- as.numeric(db$SSGLBT.3)
+db$SSGLBT.4 <- as.numeric(db$SSGLBT.4)
+
+## DASS21
+cols_to_transform <- paste0("DASS.21_", c("Current", "Puberty"), "_", 1:21)
+
+db[, (cols_to_transform) := lapply(.SD, function(x) as.numeric(x) - 1), .SDcols = cols_to_transform]
+
+#MSPSS puberty
+db[, paste0("MSPSS.1.1_", 1:7)] <- lapply(db[, paste0("MSPSS.1.1_", 1:7)], as.numeric)
+db[, paste0("MSPSS.2.1_", 1:6)] <- lapply(db[, paste0("MSPSS.2.1_", 1:6)], as.numeric)
+
+#MSPSS now
+db[, paste0("MSPSS.1.2_", 1:7)] <- lapply(db[, paste0("MSPSS.1.2_", 1:7)], as.numeric)
+db[, paste0("MSPSS.2.2_", 1:6)] <- lapply(db[, paste0("MSPSS.2.2_", 1:6)], as.numeric)
+
+#FCS
+cols <- c("FCS.1.1_1", "FCS.1.2_1", "FCS.2.1_1", "FCS.2.1_2", "FCS.2.1_3", 
+          "FCS.2.1_4", "FCS.3.1_1", "FCS.3.1_2", "FCS.3.1_3", "FCS.3.1_4", "FCS.3.1_5")
+
+db[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
+
+## EDS
+db[, c("EDS.1_1", "EDS.1_2", "EDS.1_3", "EDS.1_4", "EDS.1_5", "EDS.1_6", "EDS.1_7", "EDS.1_8", "EDS.1_9")] <- lapply(db[, c("EDS.1_1", "EDS.1_2", "EDS.1_3", "EDS.1_4", "EDS.1_5", "EDS.1_6", "EDS.1_7", "EDS.1_8", "EDS.1_9")],as.numeric)
+
+## BloomS
+db[, c("BloomS_1", "BloomS_2", "BloomS_3", "BloomS_4", "BloomS_5")] <- lapply(db[, c("BloomS_1", "BloomS_2", "BloomS_3", "BloomS_4", "BloomS_5")],as.numeric)
+
+## PDS
+db[, c("Retro_PDS.1_1", "Retro_PDS.1_2", "Retro_PDS.1_3", "Retro_PDS.1_4", "Retro_PDS.1_5", "Retro_PDS.1_6", "Retro_PDS.1_7")] <- lapply(db[, c("Retro_PDS.1_1", "Retro_PDS.1_2", "Retro_PDS.1_3", "Retro_PDS.1_4", "Retro_PDS.1_5", "Retro_PDS.1_6", "Retro_PDS.1_7")],as.numeric)
+
+## CTQ
+db[, c("CTQ.1_1", "CTQ.1_2", "CTQ.1_3", "CTQ.1_4", "CTQ.1_5", "CTQ.1_6", "CTQ.1_7", "CTQ.1_8", "CTQ.1_9", "CTQ.1_10", "CTQ.1_11", "CTQ.1_12", "CTQ.1_13", "CTQ.1_14","CTQ.1_15", "CTQ.1_16", "CTQ.1_17", "CTQ.1_18", "CTQ.1_19", "CTQ.1_20", "CTQ.1_21", "CTQ.1_22", "CTQ.1_23", "CTQ.1_24", "CTQ.1_25", "CTQ.1_26", "CTQ.1_27", "CTQ.1_28", "CTQ.1_29", "CTQ.1_30", "CTQ.1_31", "CTQ.1_32"  )] <- lapply(db[, c("CTQ.1_1", "CTQ.1_2", "CTQ.1_3", "CTQ.1_4", "CTQ.1_5", "CTQ.1_6", "CTQ.1_7", "CTQ.1_8", "CTQ.1_9", "CTQ.1_10", "CTQ.1_11", "CTQ.1_12", "CTQ.1_13", "CTQ.1_14","CTQ.1_15", "CTQ.1_16", "CTQ.1_17", "CTQ.1_18", "CTQ.1_19", "CTQ.1_20", "CTQ.1_21", "CTQ.1_22", "CTQ.1_23", "CTQ.1_24", "CTQ.1_25", "CTQ.1_26", "CTQ.1_27", "CTQ.1_28", "CTQ.1_29", "CTQ.1_30", "CTQ.1_31", "CTQ.1_32"  )],as.numeric)
+
+## DHEQ
+cols <- c("DHEQ_GE.Puberty_1", "DHEQ_GE.Puberty_2", "DHEQ_GE.Puberty_3", "DHEQ_GE.Puberty_4", "DHEQ_GE.Puberty_5", "DHEQ_GE.Puberty_6")
+db[, (cols) := lapply(.SD, as.numeric), .SDcols = cols]
+columns_to_convert <- c("DHEQ_HD.Puberty_1", "DHEQ_HD.Puberty_2", "DHEQ_HD.Puberty_3", 
+                        "DHEQ_HD.Puberty_4", "DHEQ_HD.Puberty_5", "DHEQ_HD.Puberty_6", 
+                        "DHEQ_Vic.Puberty_1", "DHEQ_Vic.Puberty_2", "DHEQ_Vic.Puberty_3", 
+                        "DHEQ_Vic.Puberty_4", "DHEQ_Vig.Puberty_1", "DHEQ_Vig.Puberty_2", 
+                        "DHEQ_Vig.Puberty_3", "DHEQ_Vig.Puberty_4", "DHEQ_Vig.Puberty_5", 
+                        "DHEQ_Vig.Puberty_6", "DHEQ_FO.Puberty_1", "DHEQ_FO.Puberty_2", 
+                        "DHEQ_FO.Puberty_3", "DHEQ_FO.Puberty_4", "DHEQ_FO.Puberty_5", 
+                        "DHEQ_FO.Puberty_6", "DHEQ_VT.Puberty_1", "DHEQ_VT.Puberty_2", 
+                        "DHEQ_VT.Puberty_3", "DHEQ_VT.Puberty_4", "DHEQ_VT.Puberty_5", 
+                        "DHEQ_VT.Puberty_6", "DHEQ_I.Puberty_1", "DHEQ_I.Puberty_2", 
+                        "DHEQ_I.Puberty_3", "DHEQ_I.Puberty_4")
+db[, (columns_to_convert) := lapply(.SD, as.numeric), .SDcols = columns_to_convert]
+
+## YASB
+db[, c("YASB_1", "YASB_2", "YASB_3", "YASB_4", "YASB_5", "YASB_6", "YASB_7", "YASB_8", "YASB_9", "YASB_10", "YASB_11", "YASB_12", "YASB_13", "YASB_14")] <- lapply(db[, c("YASB_1", "YASB_2", "YASB_3", "YASB_4", "YASB_5", "YASB_6", "YASB_7", "YASB_8", "YASB_9", "YASB_10", "YASB_11", "YASB_12", "YASB_13", "YASB_14")],as.numeric)
+
+## TCS
+db[, c("TCS.1_1", "TCS.1_2", "TCS.1_3", "TCS.1_4", "TCS.1_5", "TCS.2_1", "TCS.2_2", "TCS.2_3", "TCS.2_4", "TCS.2_5")] <- lapply(db[, c("TCS.1_1", "TCS.1_2", "TCS.1_3", "TCS.1_4", "TCS.1_5", "TCS.2_1", "TCS.2_2", "TCS.2_3", "TCS.2_4", "TCS.2_5")],as.numeric)
+
+## CTSM
+db[, c("CTSM.1.1_1", "CTSM.1.1_2", "CTSM.1.1_3", "CTSM.1.1_4", "CTSM.1.1_5", "CTSM.1.1_6", "CTSM.1.2_1", "CTSM.1.2_2", "CTSM.1.2_3", "CTSM.1.2_4", "CTSM.1.2_5", "CTSM.1.2_6")] <- lapply(db[, c("CTSM.1.1_1", "CTSM.1.1_2", "CTSM.1.1_3", "CTSM.1.1_4", "CTSM.1.1_5", "CTSM.1.1_6", "CTSM.1.2_1", "CTSM.1.2_2", "CTSM.1.2_3", "CTSM.1.2_4", "CTSM.1.2_5", "CTSM.1.2_6")],as.numeric)
+
+## COS
+db[, c("COS.1.1_1", "COS.1.1_2", "COS.1.1_3", "COS.1.2_1", "COS.1.2_2", "COS.1.2_3")] <- lapply(db[, c("COS.1.1_1", "COS.1.1_2", "COS.1.1_3", "COS.1.2_1", "COS.1.2_2", "COS.1.2_3")], as.numeric)
+
+```
+
+
+# Missing data
+
+```{r}
+# Check for missing values in SCSR (puberty)
+missing_SCS1 <- is.na(db$SCSR1_Total)
+sum(missing_SCS1)
+
+# Check for missing values in SCSR (now)
+missing_SCS2 <- is.na(db$SCSR2_Total)
+sum(missing_SCS2)
+
+# Check for missing values in SSES_Avg
+missing_SSES <- is.na(db$SSES_Avg)
+sum(missing_SSES)
+
+# Check for missing values in SSGBLT_Avg
+missing_SSGBLT <- is.na(db$SSGBLT_Avg)
+sum(missing_SSGBLT)
+
+# Check for missing values in DASS21 (now)
+missing_DASS21_CTotal <- is.na(db$DASS21_CTotal)
+sum(missing_DASS21_CTotal)
+
+# Check for missing values in DASS21 (puberty)
+missing_DASS21_PTotal <- is.na(db$DASS21_PTotal)
+sum(missing_DASS21_PTotal)
+
+# Check for missing values in MSPSS (puberty)
+missing_MSPSS_P_TOTAL <- is.na(db$MSPSS_P_TOTAL)
+sum(missing_MSPSS_P_TOTAL)
+
+# Check for missing values in MSPSS (now)
+missing_MSPSS_C_TOTAL <- is.na(db$MSPSS_C_TOTAL)
+sum(missing_MSPSS_C_TOTAL)
+
+# Check for missing values in FCS_Avg
+missing_FCS <- is.na(db$FCS_Avg)
+sum(missing_FCS)
+
+# Check for missing values in EDS_Total
+missing_EDS_Total <- is.na(db$EDS_Total)
+sum(missing_EDS_Total)
+
+# Check for missing values in BloomS_Average
+missing_BloomS_Average <- is.na(db$BloomS_Average)
+sum(missing_BloomS_Average)
+
+# Check for missing values in PDS_Sum
+missing_PDS_Sum <- is.na(db$PDS_Sum)
+sum(missing_PDS_Sum)
+
+# Check for missing values in CTQ_Minimise
+missing_CTQ_Minimise <- is.na(db$CTQ_Minimise)
+sum(missing_CTQ_Minimise)
+
+# Check for missing values in CTQ_PhysicalNeglect
+missing_CTQ_PhysicalNeglect <- is.na(db$CTQ_PhysicalNeglect)
+sum(missing_CTQ_PhysicalNeglect)
+
+# Check for missing values in CTQ_EmotionNeglect
+missing_CTQ_EmotionNeglect <- is.na(db$CTQ_EmotionNeglect)
+sum(missing_CTQ_EmotionNeglect)
+
+# Check for missing values in CTQ_SexAbuse
+missing_CTQ_SexAbuse <- is.na(db$CTQ_SexAbuse)
+sum(missing_CTQ_SexAbuse)
+
+# Check for missing values in CTQ_PhysicalAbuse
+missing_CTQ_PhysicalAbuse <- is.na(db$CTQ_PhysicalAbuse)
+sum(missing_CTQ_PhysicalAbuse)
+
+# Check for missing values in CTQ_EmotionAbuse
+missing_CTQ_EmotionAbuse <- is.na(db$CTQ_EmotionAbuse)
+sum(missing_CTQ_EmotionAbuse)
+
+# Check for missing values in DHEQ_V1_HD_Avg
+missing_DHEQ_V1_HD_Avg <- is.na(db$DHEQ_V1_HD_Avg)
+sum(missing_DHEQ_V1_HD_Avg)
+
+# Check for missing values in DHEQ_V1_GE_Avg
+missing_DHEQ_V1_GE_Avg <- is.na(db$DHEQ_V1_GE_Avg)
+sum(missing_DHEQ_V1_GE_Avg)
+
+# Check for missing values in DHEQ_V1_Vic_Avg
+missing_DHEQ_V1_Vic_Avg <- is.na(db$DHEQ_V1_Vic_Avg)
+sum(missing_DHEQ_V1_Vic_Avg)
+
+# Check for missing values in DHEQ_V1_Vig_Avg
+missing_DHEQ_V1_Vig_Avg <- is.na(db$DHEQ_V1_Vig_Avg)
+sum(missing_DHEQ_V1_Vig_Avg)
+
+# Check for missing values in DHEQ_V1_FO_Avg
+missing_DHEQ_V1_FO_Avg <- is.na(db$DHEQ_V1_FO_Avg)
+sum(missing_DHEQ_V1_FO_Avg)
+
+# Check for missing values in DHEQ_V1_VT_Avg
+missing_DHEQ_V1_VT_Avg <- is.na(db$DHEQ_V1_VT_Avg)
+sum(missing_DHEQ_V1_VT_Avg)
+
+# Check for missing values in DHEQ_V1_I_Avg
+missing_DHEQ_V1_I_Avg <- is.na(db$DHEQ_V1_I_Avg)
+sum(missing_DHEQ_V1_I_Avg)
+
+# Check for missing values in YASB_RelAg
+missing_YASB_RelAg <- is.na(db$YASB_RelAg)
+sum(missing_YASB_RelAg)
+
+# Check for missing values in YASB_SocAg
+missing_YASB_SocAg <- is.na(db$YASB_SocAg)
+sum(missing_YASB_SocAg)
+
+# Check for missing values in YASB_Mat
+missing_YASB_Mat <- is.na(db$YASB_Mat)
+sum(missing_YASB_Mat)
+```
+
+# Demographics
+```{r}
+summary(db$preintq_age)
+sd(db$preintq_age, na.rm = TRUE)
+
+summary(db$session1_age)
+sd(db$session1_age, na.rm = TRUE)
+
+summary(db$session2_age)
+sd(db$session2_age, na.rm = TRUE)
+
+table(db$birth_sex)
+```
+
+
+# Social connectedness scale - revised
+
+```{r}
+## scoring - now
+db[, SCSR2_Total := rowMeans(.SD, na.rm = TRUE)*20,
+   .SDcols = c("SCS.R.2_1", "SCS.R.2_2", "SCS.R.2_3", "SCS.R.2_4", "SCS.R.2_5", "SCS.R.2_6", "SCS.R.2_7", "SCS.R.2_8", "SCS.R.2_9", "SCS.R.2_10", "SCS.R.2_11", "SCS.R.2_12", "SCS.R.2_13", "SCS.R.2_14", "SCS.R.2_15", "SCS.R.2_16", "SCS.R.2_17", "SCS.R.2_18", "SCS.R.2_19", "SCS.R.2_20")]
+
+# Compute Cronbach's alpha
+SCS2_alpha <- alpha(db[, c("SCS.R.2_1", "SCS.R.2_2", "SCS.R.2_3", "SCS.R.2_4", "SCS.R.2_5", "SCS.R.2_6", "SCS.R.2_7", "SCS.R.2_8", "SCS.R.2_9", "SCS.R.2_10","SCS.R.2_11", "SCS.R.2_12", "SCS.R.2_13", "SCS.R.2_14", "SCS.R.2_15", "SCS.R.2_16", "SCS.R.2_17", "SCS.R.2_18", "SCS.R.2_19", "SCS.R.2_20")])
+
+# View the results
+print(SCS2_alpha$total)
+
+## summary now
+summary(db$SCSR2_Total)
+sd(db$SCSR2_Total)
+
+## scoring - puberty
+
+
+db[, SCSR1_Total := rowMeans(.SD, na.rm = TRUE)*20,
+   .SDcols = c("SCS.R.1_1", "SCS.R.1_2", "SCS.R.1_3", "SCS.R.1_4", "SCS.R.1_5", "SCS.R.1_6", "SCS.R.1_7", "SCS.R.1_8", "SCS.R.1_9", "SCS.R.1_10", "SCS.R.1_11", "SCS.R.1_12", "SCS.R.1_13", "SCS.R.1_14", "SCS.R.1_15", "SCS.R.1_16", "SCS.R.1_17", "SCS.R.1_18", "SCS.R.1_19", "SCS.R.1_20")]
+
+db$SCSR1_Total <- as.numeric(db$SCSR1_Total)
+
+# Cronbachs alpha
+SCS1_alpha <- alpha(db[, c("SCS.R.1_1", "SCS.R.1_2", "SCS.R.1_3", "SCS.R.1_4", "SCS.R.1_5", "SCS.R.1_6", "SCS.R.1_7", "SCS.R.1_8", "SCS.R.1_9", "SCS.R.1_10", "SCS.R.1_11", "SCS.R.1_12", "SCS.R.1_13", "SCS.R.1_14", "SCS.R.1_15", "SCS.R.1_16", "SCS.R.1_17", "SCS.R.1_18", "SCS.R.1_19", "SCS.R.1_20")])
+
+print(SCS1_alpha$total)
+
+## summary puberty
+summary(db$SCSR1_Total)
+sd(db$SCSR1_Total, na.rm = TRUE)
+
+```
+
+# Supportive School Environment Scale
+```{r}
+## remove 'prefer not to say'
+db[, SSES.2 := ifelse(SSES.2 == 3, NA, SSES.2)]
+db[, SSES.3 := ifelse(SSES.2 == 4, NA, SSES.3)]
+db[, SSES.4 := ifelse(SSES.4 == 4, NA, SSES.4)]
+
+
+## reversal
+db[, SSES.3 := (5 - SSES.3)]
+db[, SSES.4 := (4 - SSES.4)]
+db[, SSES.6 := (6 - SSES.6)]
+
+## average for SSES
+db[, SSES_Avg := rowMeans(.SD, na.rm = TRUE), .SDcols = c("SSES.1", "SSES.2", "SSES.3", "SSES.4", "SSES.5", "SSES.6", "SSES.7")]
+
+## alpha
+SSES_alpha <- alpha(db[, c("SSES.1", "SSES.2", "SSES.3", "SSES.4", "SSES.5", "SSES.6", "SSES.7")])
+
+print(SSES_alpha$total)
+
+## summary
+
+summary(db$SSES_Avg)
+sd(db$SSES_Avg, na.rm = TRUE)
+
+```
+
+# Supportive School GLBT
+
+```{r}
+##reverse scoring
+db[, SSGLBT.3 := 6 - SSGLBT.3]
+db[, SSGLBT.4 := 6 - SSGLBT.4]
+
+## alpha
+SSGLBT_alpha <- alpha(db[, c("SSGLBT.1", "SSGLBT.2", "SSGLBT.3", "SSGLBT.4")])
+
+print(SSGLBT_alpha$total)
+
+
+## create average
+db[, SSGLBT_Avg := rowMeans(.SD, na.rm = TRUE), .SDcols = c("SSGLBT.1", "SSGLBT.2", "SSGLBT.3", "SSGLBT.4")]
+
+## summary
+
+summary(db$SSGLBT_Avg)
+sd(db$SSGLBT_Avg, na.rm = TRUE)
+
+```
+
+
+# DASS-21
+```{r}
+
+## puberty alpha
+DASS_P_alpha <- alpha(db[, c("DASS.21_Puberty_1", "DASS.21_Puberty_2", "DASS.21_Puberty_3", "DASS.21_Puberty_4", "DASS.21_Puberty_5", "DASS.21_Puberty_6", "DASS.21_Puberty_7", "DASS.21_Puberty_8", "DASS.21_Puberty_9", "DASS.21_Puberty_10", "DASS.21_Puberty_11", "DASS.21_Puberty_12", "DASS.21_Puberty_13", "DASS.21_Puberty_14", "DASS.21_Puberty_15", "DASS.21_Puberty_16", "DASS.21_Puberty_17", "DASS.21_Puberty_18", "DASS.21_Puberty_19", "DASS.21_Puberty_20", "DASS.21_Puberty_21")])
+
+print(DASS_P_alpha$total)
+
+## depression puberty alpha
+
+DASS_PD_alpha <- alpha(db[, c("DASS.21_Puberty_3", "DASS.21_Puberty_5", "DASS.21_Puberty_10", "DASS.21_Puberty_13", "DASS.21_Puberty_16", "DASS.21_Puberty_17", "DASS.21_Puberty_21")])
+
+print(DASS_PD_alpha$total)
+
+## current alpha
+DASS_C_alpha <- alpha(db[, c("DASS.21_Current_1", "DASS.21_Current_2", "DASS.21_Current_3", "DASS.21_Current_4", "DASS.21_Current_5", "DASS.21_Current_6", "DASS.21_Current_7", "DASS.21_Current_8", "DASS.21_Current_9", "DASS.21_Current_10", "DASS.21_Current_11", "DASS.21_Current_12", "DASS.21_Current_13", "DASS.21_Current_14", "DASS.21_Current_15", "DASS.21_Current_16", "DASS.21_Current_17", "DASS.21_Current_18", "DASS.21_Current_19", "DASS.21_Current_20", "DASS.21_Current_21")])
+
+print(DASS_C_alpha$total)
+
+## depression current alpha
+DASS_CD_alpha <- alpha(db[, c("DASS.21_Current_3", "DASS.21_Current_5", "DASS.21_Current_10", "DASS.21_Current_13", "DASS.21_Current_16", "DASS.21_Current_17", "DASS.21_Current_21")])
+
+print(DASS_CD_alpha$total)
+
+## depression - now
+db[, DASS21_CDepression1 := rowMeans(.SD, na.rm = TRUE)*7,
+     .SDcols = c("DASS.21_Current_3", "DASS.21_Current_5", "DASS.21_Current_10", "DASS.21_Current_13", "DASS.21_Current_16", "DASS.21_Current_17", "DASS.21_Current_21")]
+
+db[, DASS21_CDepressionFINAL := DASS21_CDepression1*2]
+
+summary(db$DASS21_CDepressionFINAL)
+sd(db$DASS21_CDepressionFINAL, na.rm = TRUE)
+## anxiety - now
+db[, DASS21_CAnxiety1 := rowMeans(.SD, na.rm = TRUE)*7,
+     .SDcols = c("DASS.21_Current_2", "DASS.21_Current_4", "DASS.21_Current_7", "DASS.21_Current_9", "DASS.21_Current_15", "DASS.21_Current_19", "DASS.21_Current_20")]
+
+db[, DASS21_CAnxietyFINAL := DASS21_CAnxiety1*2]
+
+## stress - now
+db[, DASS21_CStress1 := rowMeans(.SD, na.rm = TRUE)*7,
+     .SDcols = c("DASS.21_Current_1", "DASS.21_Current_6", "DASS.21_Current_8", "DASS.21_Current_11", "DASS.21_Current_12", "DASS.21_Current_14", "DASS.21_Current_18")]
+
+db[, DASS21_CStressFINAL := DASS21_CStress1*2]
+
+## total - now
+db[, DASS21_CTotal := DASS21_CStressFINAL + DASS21_CAnxietyFINAL + DASS21_CDepressionFINAL]
+
+## depression - puberty
+db[, DASS21_PDepression1 := rowMeans(.SD, na.rm = TRUE)*7,
+     .SDcols = c("DASS.21_Puberty_3", "DASS.21_Puberty_5", "DASS.21_Puberty_10", "DASS.21_Puberty_13", "DASS.21_Puberty_16", "DASS.21_Puberty_17", "DASS.21_Puberty_21")]
+
+db[, DASS21_PDepressionFINAL := DASS21_PDepression1*2]
+
+summary(db$DASS21_PDepressionFINAL)
+sd(db$DASS21_PDepressionFINAL, na.rm = TRUE)
+## anxiety - puberty
+db[, DASS21_PAnxiety1 := rowMeans(.SD, na.rm = TRUE)*7,
+     .SDcols = c("DASS.21_Puberty_2", "DASS.21_Puberty_4", "DASS.21_Puberty_7", "DASS.21_Puberty_9", "DASS.21_Puberty_15", "DASS.21_Puberty_19", "DASS.21_Puberty_20")]
+
+db[, DASS21_PAnxietyFINAL := DASS21_PAnxiety1*2]
+
+## stress - puberty
+db[, DASS21_PStress1 := rowMeans(.SD, na.rm = TRUE)*7,
+     .SDcols = c("DASS.21_Puberty_1", "DASS.21_Puberty_6", "DASS.21_Puberty_8", "DASS.21_Puberty_11", "DASS.21_Puberty_12", "DASS.21_Puberty_14", "DASS.21_Puberty_18")]
+
+db[, DASS21_PStressFINAL := DASS21_PStress1*2]
+
+## total - puberty
+db[, DASS21_PTotal := DASS21_PStressFINAL + DASS21_PAnxietyFINAL + DASS21_PDepressionFINAL]
+
+## summary - puberty 
+summary(db$DASS21_PTotal)
+sd(db$DASS21_PTotal, na.rm = TRUE)
+
+## summary - now 
+summary(db$DASS21_CTotal)
+sd(db$DASS21_CTotal, na.rm = TRUE)
+```
+# MSPSS
+```{r}
+## puberty alpha
+MSPSS_P_alpha <- alpha(db[, c("MSPSS.1.1_1", "MSPSS.1.1_2", "MSPSS.1.1_3", "MSPSS.1.1_4", "MSPSS.1.1_5", "MSPSS.1.1_6", "MSPSS.1.1_7", "MSPSS.2.1_1", "MSPSS.2.1_2", "MSPSS.2.1_3", "MSPSS.2.1_4", "MSPSS.2.1_5", "MSPSS.2.1_6")])
+
+print(MSPSS_P_alpha$total)
+
+## current alpha
+MSPSS_C_alpha <- alpha(db[, c("MSPSS.1.2_1", "MSPSS.1.2_2", "MSPSS.1.2_3", "MSPSS.1.2_4", "MSPSS.1.2_5", "MSPSS.1.2_6", "MSPSS.1.2_7", "MSPSS.2.2_1", "MSPSS.2.2_2", "MSPSS.2.2_3", "MSPSS.2.2_4", "MSPSS.2.2_5", "MSPSS.2.2_6")])
+
+print(MSPSS_C_alpha$total)
+
+
+## scoring puberty
+
+## significant other subscale
+db[, MSPSS_P_SO := rowMeans(.SD, na.rm = TRUE), .SDcols = c("MSPSS.1.1_1", "MSPSS.1.1_2", "MSPSS.1.1_5", "MSPSS.2.1_4")]
+
+## family subscale
+db[, MSPSS_P_Fa := rowMeans(.SD, na.rm = TRUE), .SDcols = c("MSPSS.1.1_3", "MSPSS.1.1_4", "MSPSS.2.1_2", "MSPSS.2.1_5")]
+
+## friends subscale
+db[, MSPSS_P_Fr := rowMeans(.SD, na.rm = TRUE), .SDcols = c("MSPSS.1.1_6", "MSPSS.2.1_1", "MSPSS.2.1_3", "MSPSS.2.1_6")]
+
+## total
+db[, MSPSS_P_TOTAL := rowMeans(.SD, na.rm = TRUE), .SDcols = c("MSPSS.1.1_1", "MSPSS.1.1_2", "MSPSS.1.1_3", "MSPSS.1.1_4", "MSPSS.1.1_5", "MSPSS.1.1_6", "MSPSS.2.1_1", "MSPSS.2.1_2", "MSPSS.2.1_3", "MSPSS.2.1_4", "MSPSS.2.1_5", "MSPSS.2.1_6")]
+
+## scoring now
+
+## significant other subscale
+db[, MSPSS_C_SO := rowMeans(.SD, na.rm = TRUE), .SDcols = c("MSPSS.1.2_1", "MSPSS.1.2_2", "MSPSS.1.2_5", "MSPSS.1.2_4")]
+
+## family subscale
+db[, MSPSS_C_Fa := rowMeans(.SD, na.rm = TRUE), .SDcols = c("MSPSS.1.2_3", "MSPSS.1.2_4", "MSPSS.2.2_2", "MSPSS.2.2_5")]
+
+## friends subscale
+db[, MSPSS_C_Fr := rowMeans(.SD, na.rm = TRUE), .SDcols = c("MSPSS.1.2_6", "MSPSS.2.2_1", "MSPSS.2.2_3", "MSPSS.2.2_6")]
+
+## total
+db[, MSPSS_C_TOTAL := rowMeans(.SD, na.rm = TRUE), .SDcols = c("MSPSS.1.2_1", "MSPSS.1.2_2", "MSPSS.1.2_3", "MSPSS.1.2_4", "MSPSS.1.2_5", "MSPSS.1.2_6", "MSPSS.2.2_1", "MSPSS.2.2_2", "MSPSS.2.2_3", "MSPSS.2.2_4", "MSPSS.2.2_5", "MSPSS.2.2_6")]
+
+## summary - now 
+summary(db$MSPSS_C_TOTAL)
+sd(db$MSPSS_C_TOTAL, na.rm = TRUE)
+
+## summary - puberty 
+summary(db$MSPSS_P_TOTAL, na.rm = TRUE)
+sd(db$MSPSS_P_TOTAL, na.rm = TRUE)
+
+```
+# FCS
+```{r}
+## scoring puberty 
+db[, FCS_PAvg := rowMeans(.SD, na.rm = TRUE), .SDcols = c("FCS.3.1_1", "FCS.3.1_2", "FCS.3.1_3", "FCS.3.1_4", "FCS.3.1_5")]
+
+## puberty alpha
+FCS_Palpha <- alpha(db[, c("FCS.3.1_1", "FCS.3.1_2", "FCS.3.1_3", "FCS.3.1_4", "FCS.3.1_5")])
+
+print(FCS_Palpha$total)
+
+## summary puberty
+summary(db$FCS_PAvg)
+sd(db$FCS_PAvg, na.rm = TRUE)
+
+## scoring now
+db[, FCS_CAvg := rowMeans(.SD, na.rm = TRUE), .SDcols = c("FCS.3.2_1", "FCS.3.2_2", "FCS.3.2_3", "FCS.3.2_4", "FCS.3.2_5")]
+
+## current alpha
+FCS_Calpha <- alpha(db[, c("FCS.3.2_1", "FCS.3.2_2", "FCS.3.2_3", "FCS.3.2_4", "FCS.3.2_5")])
+
+print(FCS_Calpha$total)
+
+## summary puberty
+summary(db$FCS_CAvg)
+sd(db$FCS_CAvg, na.rm = TRUE)
+```
+
+# EDS
+```{r}
+## reverse EDS
+reverse_EDS <- function(x) {
+  7 - x
+}
+
+db[, paste0("EDS.1_", 1:9) := lapply(.SD, reverse_EDS), .SDcols = paste0("EDS.1_", 1:9)]
+
+
+db[, EDS_Total := rowMeans(.SD, na.rm = TRUE)*9,
+     .SDcols = c("EDS.1_1", "EDS.1_2", "EDS.1_3", "EDS.1_4", "EDS.1_5", "EDS.1_6", "EDS.1_7", "EDS.1_8", "EDS.1_9")]
+
+## alpha
+EDS_alpha <- alpha(db[, c("EDS.1_1", "EDS.1_2", "EDS.1_3", "EDS.1_4", "EDS.1_5", "EDS.1_6", "EDS.1_7", "EDS.1_8", "EDS.1_9")])
+
+print(EDS_alpha$total)
+
+## summary
+summary(db$EDS_Total)
+sd(db$EDS_Total, na.rm = TRUE)
+```
+
+# Blooms Scale
+```{r}
+## average
+
+db[, BloomS_Average := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("BloomS_1", "BloomS_2", "BloomS_3", "BloomS_4", "BloomS_5")]
+
+## alpha
+BloomS_alpha <- alpha(db[, c("BloomS_1", "BloomS_2", "BloomS_3", "BloomS_4", "BloomS_5")])
+
+print(BloomS_alpha$total)
+
+## summary 
+summary(db$BloomS_Average)
+sd(db$BloomS_Average, na.rm = TRUE)
+```
+
+
+# PDS
+```{r}
+## alpha
+PDS_alpha <- alpha(db[, c("Retro_PDS.1_1", "Retro_PDS.1_2", "Retro_PDS.1_3", "Retro_PDS.1_4", "Retro_PDS.1_5", "Retro_PDS.1_6", "Retro_PDS.1_7")]) 
+
+print(PDS_alpha$total)
+
+## sum scores
+db[, PDS_Sum := rowMeans(.SD, na.rm = TRUE)*7,
+     .SDcols = c("Retro_PDS.1_1", "Retro_PDS.1_2", "Retro_PDS.1_3", "Retro_PDS.1_4", "Retro_PDS.1_5", "Retro_PDS.1_6", "Retro_PDS.1_7")]
+
+## summary 
+summary(db$PDS_Sum)
+sd(db$PDS_Sum, na.rm = TRUE)
+
+```
+
+
+# CTQ
+```{r}
+
+## reversal (using toris as a guide)
+
+db[, CTQ.1_2 := (6 - CTQ.1_2)]
+db[, CTQ.1_5 := (6 - CTQ.1_5)]
+db[, CTQ.1_7 := (6 - CTQ.1_7)]
+db[, CTQ.1_10 := (6 - CTQ.1_10)]
+db[, CTQ.1_13 := (6 - CTQ.1_13)]
+db[, CTQ.1_16 := (6 - CTQ.1_16)]
+db[, CTQ.1_19 := (6 - CTQ.1_19)]
+db[, CTQ.1_22 := (6 - CTQ.1_22)]
+db[, CTQ.1_26 := (6 - CTQ.1_26)]
+db[, CTQ.1_28 := (6 - CTQ.1_28)]
+
+## alpha
+CTQ_alpha <- alpha(db[, c("CTQ.1_1", "CTQ.1_2", "CTQ.1_3", "CTQ.1_4", "CTQ.1_5", "CTQ.1_6", "CTQ.1_7", "CTQ.1_8", "CTQ.1_9", "CTQ.1_10", "CTQ.1_11", "CTQ.1_12", "CTQ.1_13", "CTQ.1_14","CTQ.1_15", "CTQ.1_16", "CTQ.1_17", "CTQ.1_18", "CTQ.1_19", "CTQ.1_20", "CTQ.1_21", "CTQ.1_22", "CTQ.1_23", "CTQ.1_24", "CTQ.1_25", "CTQ.1_26", "CTQ.1_27", "CTQ.1_28", "CTQ.1_29", "CTQ.1_30", "CTQ.1_31", "CTQ.1_32")])
+
+print(CTQ_alpha$total)
+
+## emotional abuse (using toris calculations)
+
+db[, CTQ_EmotionAbuse := rowMeans(.SD, na.rm = TRUE)*5,
+     .SDcols = c("CTQ.1_3", "CTQ.1_8", "CTQ.1_14", "CTQ.1_18", "CTQ.1_25")]
+summary(db$CTQ_EmotionAbuse)
+sd(db$CTQ_EmotionAbuse, na.rm = TRUE)
+
+## physical abuse
+
+db[, CTQ_PhysicalAbuse := rowMeans(.SD, na.rm = TRUE)*5,
+     .SDcols = c("CTQ.1_9", "CTQ.1_11", "CTQ.1_12", "CTQ.1_15", "CTQ.1_17")]
+summary(db$CTQ_PhysicalAbuse)
+sd(db$CTQ_PhysicalAbuse, na.rm = TRUE)
+
+## sexual abuse
+
+db[, CTQ_SexAbuse := rowMeans(.SD, na.rm = TRUE)*5,
+     .SDcols = c("CTQ.1_20", "CTQ.1_21", "CTQ.1_23", "CTQ.1_24", "CTQ.1_27")]
+summary(db$CTQ_SexAbuse)
+sd(db$CTQ_SexAbuse, na.rm = TRUE)
+
+## emotional neglect
+
+db[, CTQ_EmotionNeglect := rowMeans(.SD, na.rm = TRUE)*5,
+     .SDcols = c("CTQ.1_5", "CTQ.1_7", "CTQ.1_13", "CTQ.1_19", "CTQ.1_28")]
+summary(db$CTQ_EmotionNeglect)
+sd(db$CTQ_EmotionNeglect, na.rm = TRUE)
+## physical neglect
+
+db[, CTQ_PhysicalNeglect := rowMeans(.SD, na.rm = TRUE)*5,
+     .SDcols = c("CTQ.1_1", "CTQ.1_2", "CTQ.1_4", "CTQ.1_6", "CTQ.1_26")]
+summary(db$CTQ_PhysicalNeglect)
+sd(db$CTQ_PhysicalNeglect, na.rm = TRUE)
+
+## minimisation
+
+db[, CTQ_Minimise := rowMeans(.SD, na.rm = TRUE)*3,
+     .SDcols = c("CTQ.1_10", "CTQ.1_16", "CTQ.1_22")]
+summary(db$CTQ_Minimise)
+sd(db$CTQ_Minimise, na.rm = TRUE)
+
+```
+
+# DHEQ Preface
+
+The DHEQ has been scored in 4 different ways to reflect methods in current literature. The have been labelled here as versions 1 to 4. More information can be found in the codebook.
+
+Version 1: Responses are not recorded to allow for differentiation on a continuous scale including whether discrimination occurred or did not occur. A mean is then computed for responses to all items, indicating the mean level of distress the respondent feels related to these experiences.
+
+Version 2: Responses are recoded so that 0 = 0, discrimination did not happen, and 1-5 = 1, discrimination did happen (regardless of the degree it bothered the respondent). Items are then summed for a total score indicating how many of these experiences participants have had.
+
+Version 3: Responses are recoded so that 0 and 1 = 1 (did not bother) and the rest of the responses remain the same. A mean is then computed for responses to all items, indicating the mean level of distress the respondent feels related to these experiences.
+
+Version 4: Responses are recoded so that 0 and 1 = 0, discrimination did not happen, and 2-5 = 1, discrimination did happen. Items are then summed for a total score indicating how many of these experiences participants have had.
+
+```{r}
+## recoding so that the responses are 0-5 rather than 1-6 
+cols <- c("DHEQ_GE.Puberty_1", "DHEQ_GE.Puberty_2", "DHEQ_GE.Puberty_3", "DHEQ_GE.Puberty_4", "DHEQ_GE.Puberty_5", "DHEQ_GE.Puberty_6", "DHEQ_HD.Puberty_1", "DHEQ_HD.Puberty_2", "DHEQ_HD.Puberty_3", "DHEQ_HD.Puberty_4", "DHEQ_HD.Puberty_5", "DHEQ_HD.Puberty_6", "DHEQ_Vic.Puberty_1", "DHEQ_Vic.Puberty_2", "DHEQ_Vic.Puberty_3", "DHEQ_Vic.Puberty_4", "DHEQ_Vig.Puberty_1", "DHEQ_Vig.Puberty_2", "DHEQ_Vig.Puberty_3", "DHEQ_Vig.Puberty_4", "DHEQ_Vig.Puberty_5", "DHEQ_Vig.Puberty_6", "DHEQ_FO.Puberty_1", "DHEQ_FO.Puberty_2", "DHEQ_FO.Puberty_3", "DHEQ_FO.Puberty_4", "DHEQ_FO.Puberty_5", "DHEQ_FO.Puberty_6", "DHEQ_VT.Puberty_1", "DHEQ_VT.Puberty_2", "DHEQ_VT.Puberty_3", "DHEQ_VT.Puberty_4", "DHEQ_VT.Puberty_5", "DHEQ_VT.Puberty_6", "DHEQ_I.Puberty_1", "DHEQ_I.Puberty_2", "DHEQ_I.Puberty_3", "DHEQ_I.Puberty_4")
+
+db[, (cols) := lapply(.SD, function(x) x - 1), .SDcols = cols]
+```
+
+
+## DHEQ Version 1
+```{r}
+## Gender expression average
+db[, DHEQ_V1_GE_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_GE.Puberty_1", "DHEQ_GE.Puberty_2", "DHEQ_GE.Puberty_3", "DHEQ_GE.Puberty_4", "DHEQ_GE.Puberty_5", "DHEQ_GE.Puberty_6")]
+summary(db$DHEQ_V1_GE_Avg)
+sd(db$DHEQ_V1_GE_Avg, na.rm = TRUE)
+
+DHEQ_GE_alpha <- alpha(db[, c("DHEQ_GE.Puberty_1", "DHEQ_GE.Puberty_2", "DHEQ_GE.Puberty_3", "DHEQ_GE.Puberty_4", "DHEQ_GE.Puberty_5", "DHEQ_GE.Puberty_6")])
+print(DHEQ_GE_alpha$total)
+
+## Harassment and discrimination average
+db[, DHEQ_V1_HD_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_HD.Puberty_1", "DHEQ_HD.Puberty_2", "DHEQ_HD.Puberty_3", "DHEQ_HD.Puberty_4", "DHEQ_HD.Puberty_5", "DHEQ_HD.Puberty_6")]
+summary(db$DHEQ_V1_HD_Avg)
+sd(db$DHEQ_V1_HD_Avg, na.rm = TRUE)
+
+DHEQ_HD_alpha <- alpha(db[, c("DHEQ_HD.Puberty_1", "DHEQ_HD.Puberty_2", "DHEQ_HD.Puberty_3", "DHEQ_HD.Puberty_4", "DHEQ_HD.Puberty_5", "DHEQ_HD.Puberty_6")])
+print(DHEQ_HD_alpha$total)
+
+## Victimization average
+db[, DHEQ_V1_Vic_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_Vic.Puberty_1", "DHEQ_Vic.Puberty_2", "DHEQ_Vic.Puberty_3", "DHEQ_Vic.Puberty_4")]
+summary(db$DHEQ_V1_Vic_Avg)
+sd(db$DHEQ_V1_Vic_Avg, na.rm = TRUE)
+
+DHEQ_Vic_alpha <- alpha(db[, c("DHEQ_Vic.Puberty_1", "DHEQ_Vic.Puberty_2", "DHEQ_Vic.Puberty_3", "DHEQ_Vic.Puberty_4")])
+print(DHEQ_Vic_alpha$total)
+
+## Vigilance average
+db[, DHEQ_V1_Vig_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_Vig.Puberty_1", "DHEQ_Vig.Puberty_2", "DHEQ_Vig.Puberty_3", "DHEQ_Vig.Puberty_4", "DHEQ_Vig.Puberty_5", "DHEQ_Vig.Puberty_6")]
+summary(db$DHEQ_V1_Vig_Avg)
+sd(db$DHEQ_V1_Vig_Avg, na.rm = TRUE)
+
+DHEQ_Vig_alpha <- alpha(db[, c("DHEQ_Vig.Puberty_1", "DHEQ_Vig.Puberty_2", "DHEQ_Vig.Puberty_3", "DHEQ_Vig.Puberty_4", "DHEQ_Vig.Puberty_5", "DHEQ_Vig.Puberty_6")])
+print(DHEQ_Vig_alpha$total)
+
+## Family of origin average
+db[, DHEQ_V1_FO_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_FO.Puberty_1", "DHEQ_FO.Puberty_2", "DHEQ_FO.Puberty_3", "DHEQ_FO.Puberty_4", "DHEQ_FO.Puberty_5", "DHEQ_FO.Puberty_6")]
+summary(db$DHEQ_V1_FO_Avg)
+sd(db$DHEQ_V1_FO_Avg, na.rm = TRUE)
+
+DHEQ_FO_alpha <- alpha(db[, c("DHEQ_FO.Puberty_1", "DHEQ_FO.Puberty_2", "DHEQ_FO.Puberty_3", "DHEQ_FO.Puberty_4", "DHEQ_FO.Puberty_5", "DHEQ_FO.Puberty_6")])
+print(DHEQ_FO_alpha$total)
+
+## Vicarious trauma average
+db[, DHEQ_V1_VT_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_VT.Puberty_1", "DHEQ_VT.Puberty_2", "DHEQ_VT.Puberty_3", "DHEQ_VT.Puberty_4", "DHEQ_VT.Puberty_5", "DHEQ_VT.Puberty_6")]
+summary(db$DHEQ_V1_VT_Avg)
+sd(db$DHEQ_V1_VT_Avg, na.rm = TRUE)
+
+DHEQ_VT_alpha <- alpha(db[, c("DHEQ_VT.Puberty_1", "DHEQ_VT.Puberty_2", "DHEQ_VT.Puberty_3", "DHEQ_VT.Puberty_4", "DHEQ_VT.Puberty_5", "DHEQ_VT.Puberty_6")])
+print(DHEQ_VT_alpha$total)
+
+## Isolation average
+db[, DHEQ_V1_I_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_I.Puberty_1", "DHEQ_I.Puberty_2", "DHEQ_I.Puberty_3", "DHEQ_I.Puberty_4")]
+summary(db$DHEQ_V1_I_Avg)
+sd(db$DHEQ_V1_I_Avg, na.rm = TRUE)
+
+DHEQ_I_alpha <- alpha(db[, c("DHEQ_I.Puberty_1", "DHEQ_I.Puberty_2", "DHEQ_I.Puberty_3", "DHEQ_I.Puberty_4")])
+print(DHEQ_I_alpha$total)
+
+```
+
+
+## DHEQ Version 2
+
+```{r}
+## create new db for this version
+dbv2 <- db
+
+## Recode new columns where 0 = 0 and 1 - 5 = 1
+vars <- c("DHEQ_GE.Puberty_1", "DHEQ_GE.Puberty_2", "DHEQ_GE.Puberty_3", "DHEQ_GE.Puberty_4", "DHEQ_GE.Puberty_5", "DHEQ_GE.Puberty_6",
+          "DHEQ_HD.Puberty_1", "DHEQ_HD.Puberty_2", "DHEQ_HD.Puberty_3", "DHEQ_HD.Puberty_4", "DHEQ_HD.Puberty_5", "DHEQ_HD.Puberty_6",
+          "DHEQ_Vic.Puberty_1", "DHEQ_Vic.Puberty_2", "DHEQ_Vic.Puberty_3", "DHEQ_Vic.Puberty_4",
+          "DHEQ_Vig.Puberty_1", "DHEQ_Vig.Puberty_2", "DHEQ_Vig.Puberty_3", "DHEQ_Vig.Puberty_4", "DHEQ_Vig.Puberty_5", "DHEQ_Vig.Puberty_6",
+          "DHEQ_FO.Puberty_1", "DHEQ_FO.Puberty_2", "DHEQ_FO.Puberty_3", "DHEQ_FO.Puberty_4", "DHEQ_FO.Puberty_5", "DHEQ_FO.Puberty_6",
+          "DHEQ_VT.Puberty_1", "DHEQ_VT.Puberty_2", "DHEQ_VT.Puberty_3", "DHEQ_VT.Puberty_4", "DHEQ_VT.Puberty_5", "DHEQ_VT.Puberty_6",
+          "DHEQ_I.Puberty_1", "DHEQ_I.Puberty_2", "DHEQ_I.Puberty_3", "DHEQ_I.Puberty_4")
+
+dbv2[, (vars) := lapply(.SD, function(x) as.numeric(as.character(x))), .SDcols = vars]
+
+dbv2[, (vars) := lapply(.SD, function(x) ifelse(x == 0, 0, 1)), .SDcols = vars]
+
+## Gender expression sum
+dbv2[, DHEQ_V2_GE_sum := rowMeans(.SD, na.rm = TRUE)*6,
+     .SDcols = c("DHEQ_GE.Puberty_1", "DHEQ_GE.Puberty_2", "DHEQ_GE.Puberty_3", "DHEQ_GE.Puberty_4", "DHEQ_GE.Puberty_5", "DHEQ_GE.Puberty_6")]
+
+## Harassment and discrimination sum
+dbv2[, DHEQ_V2_HD_sum := rowMeans(.SD, na.rm = TRUE)*6,
+     .SDcols = c("DHEQ_HD.Puberty_1", "DHEQ_HD.Puberty_2", "DHEQ_HD.Puberty_3", "DHEQ_HD.Puberty_4", "DHEQ_HD.Puberty_5", "DHEQ_HD.Puberty_6")]
+
+## Victimization sum
+dbv2[, DHEQ_V2_Vic_sum := rowMeans(.SD, na.rm = TRUE)*4,
+     .SDcols = c("DHEQ_Vic.Puberty_1", "DHEQ_Vic.Puberty_2", "DHEQ_Vic.Puberty_3", "DHEQ_Vic.Puberty_4")]
+
+## Vigilance sum
+dbv2[, DHEQ_V2_Vig_sum := rowMeans(.SD, na.rm = TRUE)*6,
+     .SDcols = c("DHEQ_Vig.Puberty_1", "DHEQ_Vig.Puberty_2", "DHEQ_Vig.Puberty_3", "DHEQ_Vig.Puberty_4", "DHEQ_Vig.Puberty_5", "DHEQ_Vig.Puberty_6")]
+
+## Family of origin sum
+dbv2[, DHEQ_V2_FO_sum := rowMeans(.SD, na.rm = TRUE)*6,
+     .SDcols = c("DHEQ_FO.Puberty_1", "DHEQ_FO.Puberty_2", "DHEQ_FO.Puberty_3", "DHEQ_FO.Puberty_4", "DHEQ_FO.Puberty_5", "DHEQ_FO.Puberty_6")]
+
+## Vicarious trauma sum
+dbv2[, DHEQ_V2_VT_sum := rowMeans(.SD, na.rm = TRUE)*6,
+     .SDcols = c("DHEQ_VT.Puberty_1", "DHEQ_VT.Puberty_2", "DHEQ_VT.Puberty_3", "DHEQ_VT.Puberty_4", "DHEQ_VT.Puberty_5", "DHEQ_VT.Puberty_6")]
+
+## Isolation sum
+dbv2[, DHEQ_V2_I_sum := rowMeans(.SD, na.rm = TRUE)*4,
+     .SDcols = c("DHEQ_I.Puberty_1", "DHEQ_I.Puberty_2", "DHEQ_I.Puberty_3", "DHEQ_I.Puberty_4")]
+
+
+```
+
+## DHEQ Version 3
+```{r}
+## Create new db for this version
+dbv3 <- db
+
+## making zero equal one
+
+vars <- c("DHEQ_GE.Puberty_1", "DHEQ_GE.Puberty_2", "DHEQ_GE.Puberty_3", "DHEQ_GE.Puberty_4", "DHEQ_GE.Puberty_5", "DHEQ_GE.Puberty_6",
+          "DHEQ_HD.Puberty_1", "DHEQ_HD.Puberty_2", "DHEQ_HD.Puberty_3", "DHEQ_HD.Puberty_4", "DHEQ_HD.Puberty_5", "DHEQ_HD.Puberty_6",
+          "DHEQ_Vic.Puberty_1", "DHEQ_Vic.Puberty_2", "DHEQ_Vic.Puberty_3", "DHEQ_Vic.Puberty_4",
+          "DHEQ_Vig.Puberty_1", "DHEQ_Vig.Puberty_2", "DHEQ_Vig.Puberty_3", "DHEQ_Vig.Puberty_4", "DHEQ_Vig.Puberty_5", "DHEQ_Vig.Puberty_6",
+          "DHEQ_FO.Puberty_1", "DHEQ_FO.Puberty_2", "DHEQ_FO.Puberty_3", "DHEQ_FO.Puberty_4", "DHEQ_FO.Puberty_5", "DHEQ_FO.Puberty_6",
+          "DHEQ_VT.Puberty_1", "DHEQ_VT.Puberty_2", "DHEQ_VT.Puberty_3", "DHEQ_VT.Puberty_4", "DHEQ_VT.Puberty_5", "DHEQ_VT.Puberty_6",
+          "DHEQ_I.Puberty_1", "DHEQ_I.Puberty_2", "DHEQ_I.Puberty_3", "DHEQ_I.Puberty_4")
+
+dbv3[, (vars) := lapply(.SD, function(x) as.numeric(as.character(x))), .SDcols = vars]
+
+dbv3$DHEQ_GE.Puberty_1 <- ifelse(dbv3$DHEQ_GE.Puberty_1 == 0, 1, dbv3$DHEQ_GE.Puberty_1)
+dbv3$DHEQ_GE.Puberty_2 <- ifelse(dbv3$DHEQ_GE.Puberty_2 == 0, 1, dbv3$DHEQ_GE.Puberty_2)
+dbv3$DHEQ_GE.Puberty_3 <- ifelse(dbv3$DHEQ_GE.Puberty_3 == 0, 1, dbv3$DHEQ_GE.Puberty_3)
+dbv3$DHEQ_GE.Puberty_4 <- ifelse(dbv3$DHEQ_GE.Puberty_4 == 0, 1, dbv3$DHEQ_GE.Puberty_4)
+dbv3$DHEQ_GE.Puberty_5 <- ifelse(dbv3$DHEQ_GE.Puberty_5 == 0, 1, dbv3$DHEQ_GE.Puberty_5)
+dbv3$DHEQ_GE.Puberty_6 <- ifelse(dbv3$DHEQ_GE.Puberty_6 == 0, 1, dbv3$DHEQ_GE.Puberty_6)
+dbv3$DHEQ_HD.Puberty_1 <- ifelse(dbv3$DHEQ_HD.Puberty_1 == 0, 1, dbv3$DHEQ_HD.Puberty_1)
+dbv3$DHEQ_HD.Puberty_2 <- ifelse(dbv3$DHEQ_HD.Puberty_2 == 0, 1, dbv3$DHEQ_HD.Puberty_2)
+dbv3$DHEQ_HD.Puberty_3 <- ifelse(dbv3$DHEQ_HD.Puberty_3 == 0, 1, dbv3$DHEQ_HD.Puberty_3)
+dbv3$DHEQ_HD.Puberty_4 <- ifelse(dbv3$DHEQ_HD.Puberty_4 == 0, 1, dbv3$DHEQ_HD.Puberty_4)
+dbv3$DHEQ_HD.Puberty_5 <- ifelse(dbv3$DHEQ_HD.Puberty_5 == 0, 1, dbv3$DHEQ_HD.Puberty_5)
+dbv3$DHEQ_HD.Puberty_6 <- ifelse(dbv3$DHEQ_HD.Puberty_6 == 0, 1, dbv3$DHEQ_HD.Puberty_6)
+dbv3$DHEQ_Vic.Puberty_1 <- ifelse(dbv3$DHEQ_Vic.Puberty_1 == 0, 1, dbv3$DHEQ_Vic.Puberty_1)
+dbv3$DHEQ_Vic.Puberty_2 <- ifelse(dbv3$DHEQ_Vic.Puberty_2 == 0, 1, dbv3$DHEQ_Vic.Puberty_2)
+dbv3$DHEQ_Vic.Puberty_3 <- ifelse(dbv3$DHEQ_Vic.Puberty_3 == 0, 1, dbv3$DHEQ_Vic.Puberty_3)
+dbv3$DHEQ_Vic.Puberty_4 <- ifelse(dbv3$DHEQ_Vic.Puberty_4 == 0, 1, dbv3$DHEQ_Vic.Puberty_4)
+dbv3$DHEQ_Vig.Puberty_1 <- ifelse(dbv3$DHEQ_Vig.Puberty_1 == 0, 1, dbv3$DHEQ_Vig.Puberty_1)
+dbv3$DHEQ_Vig.Puberty_2 <- ifelse(dbv3$DHEQ_Vig.Puberty_2 == 0, 1, dbv3$DHEQ_Vig.Puberty_2)
+dbv3$DHEQ_Vig.Puberty_3 <- ifelse(dbv3$DHEQ_Vig.Puberty_3 == 0, 1, dbv3$DHEQ_Vig.Puberty_3)
+dbv3$DHEQ_Vig.Puberty_4 <- ifelse(dbv3$DHEQ_Vig.Puberty_4 == 0, 1, dbv3$DHEQ_Vig.Puberty_4)
+dbv3$DHEQ_Vig.Puberty_5 <- ifelse(dbv3$DHEQ_Vig.Puberty_5 == 0, 1, dbv3$DHEQ_Vig.Puberty_5)
+dbv3$DHEQ_Vig.Puberty_6 <- ifelse(dbv3$DHEQ_Vig.Puberty_6 == 0, 1, dbv3$DHEQ_Vig.Puberty_6)
+dbv3$DHEQ_FO.Puberty_1 <- ifelse(dbv3$DHEQ_FO.Puberty_1 == 0, 1, dbv3$DHEQ_FO.Puberty_1)
+dbv3$DHEQ_FO.Puberty_2 <- ifelse(dbv3$DHEQ_FO.Puberty_2 == 0, 1, dbv3$DHEQ_FO.Puberty_2)
+dbv3$DHEQ_FO.Puberty_3 <- ifelse(dbv3$DHEQ_FO.Puberty_3 == 0, 1, dbv3$DHEQ_FO.Puberty_3)
+dbv3$DHEQ_FO.Puberty_4 <- ifelse(dbv3$DHEQ_FO.Puberty_4 == 0, 1, dbv3$DHEQ_FO.Puberty_4)
+dbv3$DHEQ_FO.Puberty_5 <- ifelse(dbv3$DHEQ_FO.Puberty_5 == 0, 1, dbv3$DHEQ_FO.Puberty_5)
+dbv3$DHEQ_FO.Puberty_6 <- ifelse(dbv3$DHEQ_FO.Puberty_6 == 0, 1, dbv3$DHEQ_FO.Puberty_6)
+dbv3$DHEQ_VT.Puberty_1 <- ifelse(dbv3$DHEQ_VT.Puberty_1 == 0, 1, dbv3$DHEQ_VT.Puberty_1)
+dbv3$DHEQ_VT.Puberty_2 <- ifelse(dbv3$DHEQ_VT.Puberty_2 == 0, 1, dbv3$DHEQ_VT.Puberty_2)
+dbv3$DHEQ_VT.Puberty_3 <- ifelse(dbv3$DHEQ_VT.Puberty_3 == 0, 1, dbv3$DHEQ_VT.Puberty_3)
+dbv3$DHEQ_VT.Puberty_4 <- ifelse(dbv3$DHEQ_VT.Puberty_4 == 0, 1, dbv3$DHEQ_VT.Puberty_4)
+dbv3$DHEQ_VT.Puberty_5 <- ifelse(dbv3$DHEQ_VT.Puberty_5 == 0, 1, dbv3$DHEQ_VT.Puberty_5)
+dbv3$DHEQ_VT.Puberty_6 <- ifelse(dbv3$DHEQ_VT.Puberty_6 == 0, 1, dbv3$DHEQ_VT.Puberty_6)
+dbv3$DHEQ_I.Puberty_1 <- ifelse(dbv3$DHEQ_I.Puberty_1 == 0, 1, dbv3$DHEQ_I.Puberty_1)
+dbv3$DHEQ_I.Puberty_2 <- ifelse(dbv3$DHEQ_I.Puberty_2 == 0, 1, dbv3$DHEQ_I.Puberty_2)
+dbv3$DHEQ_I.Puberty_3 <- ifelse(dbv3$DHEQ_I.Puberty_3 == 0, 1, dbv3$DHEQ_I.Puberty_3)
+dbv3$DHEQ_I.Puberty_4 <- ifelse(dbv3$DHEQ_I.Puberty_4 == 0, 1, dbv3$DHEQ_I.Puberty_4)
+
+## Gender expression average
+dbv3[, DHEQ_V3_GE_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_GE.Puberty_1", "DHEQ_GE.Puberty_2", "DHEQ_GE.Puberty_3", "DHEQ_GE.Puberty_4", "DHEQ_GE.Puberty_5", "DHEQ_GE.Puberty_6")]
+summary(dbv3$DHEQ_V3_GE_Avg)
+sd(dbv3$DHEQ_V3_GE_Avg, na.rm = TRUE)
+
+DHEQ_v3_GE_alpha <- psych::alpha(dbv3[, c("DHEQ_GE.Puberty_1", "DHEQ_GE.Puberty_2", "DHEQ_GE.Puberty_3", "DHEQ_GE.Puberty_4", "DHEQ_GE.Puberty_5", "DHEQ_GE.Puberty_6")])
+print(DHEQ_v3_GE_alpha$total)
+
+## Harassment and discrimination average
+dbv3[, DHEQ_V3_HD_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_HD.Puberty_1", "DHEQ_HD.Puberty_2", "DHEQ_HD.Puberty_3", "DHEQ_HD.Puberty_4", "DHEQ_HD.Puberty_5", "DHEQ_HD.Puberty_6")]
+summary(dbv3$DHEQ_V3_HD_Avg)
+sd(dbv3$DHEQ_V3_HD_Avg, na.rm = TRUE)
+
+DHEQ_v3_HD_alpha <- alpha(dbv3[, c("DHEQ_HD.Puberty_1", "DHEQ_HD.Puberty_2", "DHEQ_HD.Puberty_3", "DHEQ_HD.Puberty_4", "DHEQ_HD.Puberty_5", "DHEQ_HD.Puberty_6")])
+print(DHEQ_v3_HD_alpha$total)
+
+# Victimization average
+dbv3[, DHEQ_V3_Vic_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_Vic.Puberty_1", "DHEQ_Vic.Puberty_2", "DHEQ_Vic.Puberty_3", "DHEQ_Vic.Puberty_4")]
+summary(dbv3$DHEQ_V3_Vic_Avg)
+sd(dbv3$DHEQ_V3_Vic_Avg, na.rm = TRUE)
+
+DHEQ_v3_Vic_alpha <- alpha(dbv3[, c("DHEQ_Vic.Puberty_1", "DHEQ_Vic.Puberty_2", "DHEQ_Vic.Puberty_3", "DHEQ_Vic.Puberty_4")])
+print(DHEQ_v3_Vic_alpha$total)
+
+# Vigilance average
+dbv3[, DHEQ_V3_Vig_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_Vig.Puberty_1", "DHEQ_Vig.Puberty_2", "DHEQ_Vig.Puberty_3", "DHEQ_Vig.Puberty_4", "DHEQ_Vig.Puberty_5", "DHEQ_Vig.Puberty_6")]
+summary(dbv3$DHEQ_V3_Vig_Avg)
+sd(dbv3$DHEQ_V3_Vig_Avg, na.rm = TRUE)
+
+DHEQ_v3_Vig_alpha <- alpha(dbv3[, c("DHEQ_Vig.Puberty_1", "DHEQ_Vig.Puberty_2", "DHEQ_Vig.Puberty_3", "DHEQ_Vig.Puberty_4", "DHEQ_Vig.Puberty_5", "DHEQ_Vig.Puberty_6")])
+print(DHEQ_v3_Vig_alpha$total)
+
+# Family of origin average
+dbv3[, DHEQ_V3_FO_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_FO.Puberty_1", "DHEQ_FO.Puberty_2", "DHEQ_FO.Puberty_3", "DHEQ_FO.Puberty_4", "DHEQ_FO.Puberty_5", "DHEQ_FO.Puberty_6")]
+summary(dbv3$DHEQ_V3_FO_Avg)
+sd(dbv3$DHEQ_V3_FO_Avg, na.rm = TRUE)
+
+DHEQ_v3_FO_alpha <- alpha(dbv3[, c("DHEQ_FO.Puberty_1", "DHEQ_FO.Puberty_2", "DHEQ_FO.Puberty_3", "DHEQ_FO.Puberty_4", "DHEQ_FO.Puberty_5", "DHEQ_FO.Puberty_6")])
+print(DHEQ_v3_FO_alpha$total)
+
+# Vicarious trauma average
+dbv3[, DHEQ_V3_VT_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_VT.Puberty_1", "DHEQ_VT.Puberty_2", "DHEQ_VT.Puberty_3", "DHEQ_VT.Puberty_4", "DHEQ_VT.Puberty_5", "DHEQ_VT.Puberty_6")]
+summary(dbv3$DHEQ_V3_VT_Avg)
+sd(dbv3$DHEQ_V3_VT_Avg, na.rm = TRUE)
+
+DHEQ_v3_VT_alpha <- alpha(dbv3[, c("DHEQ_VT.Puberty_1", "DHEQ_VT.Puberty_2", "DHEQ_VT.Puberty_3", "DHEQ_VT.Puberty_4", "DHEQ_VT.Puberty_5", "DHEQ_VT.Puberty_6")])
+print(DHEQ_v3_VT_alpha$total)
+
+# Isolation average
+dbv3[, DHEQ_V3_I_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_I.Puberty_1", "DHEQ_I.Puberty_2", "DHEQ_I.Puberty_3", "DHEQ_I.Puberty_4")]
+summary(dbv3$DHEQ_V3_I_Avg)
+sd(dbv3$DHEQ_V3_I_Avg, na.rm = TRUE)
+
+DHEQ_v3_I_alpha <- alpha(dbv3[, c("DHEQ_I.Puberty_1", "DHEQ_I.Puberty_2", "DHEQ_I.Puberty_3", "DHEQ_I.Puberty_4")])
+print(DHEQ_v3_I_alpha$total)
+
+# Total
+dbv3[, DHEQ_V3_Total_Avg := rowMeans(.SD, na.rm = TRUE),
+     .SDcols = c("DHEQ_GE.Puberty_1", "DHEQ_GE.Puberty_2", "DHEQ_GE.Puberty_3", "DHEQ_GE.Puberty_4", "DHEQ_GE.Puberty_5", "DHEQ_GE.Puberty_6",
+          "DHEQ_HD.Puberty_1", "DHEQ_HD.Puberty_2", "DHEQ_HD.Puberty_3", "DHEQ_HD.Puberty_4", "DHEQ_HD.Puberty_5", "DHEQ_HD.Puberty_6",
+          "DHEQ_Vic.Puberty_1", "DHEQ_Vic.Puberty_2", "DHEQ_Vic.Puberty_3", "DHEQ_Vic.Puberty_4",
+          "DHEQ_Vig.Puberty_1", "DHEQ_Vig.Puberty_2", "DHEQ_Vig.Puberty_3", "DHEQ_Vig.Puberty_4", "DHEQ_Vig.Puberty_5", "DHEQ_Vig.Puberty_6",
+          "DHEQ_FO.Puberty_1", "DHEQ_FO.Puberty_2", "DHEQ_FO.Puberty_3", "DHEQ_FO.Puberty_4", "DHEQ_FO.Puberty_5", "DHEQ_FO.Puberty_6",
+          "DHEQ_VT.Puberty_1", "DHEQ_VT.Puberty_2", "DHEQ_VT.Puberty_3", "DHEQ_VT.Puberty_4", "DHEQ_VT.Puberty_5", "DHEQ_VT.Puberty_6",
+          "DHEQ_I.Puberty_1", "DHEQ_I.Puberty_2", "DHEQ_I.Puberty_3", "DHEQ_I.Puberty_4")]
+summary(dbv3$DHEQ_V3_Total_Avg)
+sd(dbv3$DHEQ_V3_Total_Avg, na.rm = TRUE)
+
+DHEQ_v3_Total_alpha <- alpha(dbv3[, c("DHEQ_GE.Puberty_1", "DHEQ_GE.Puberty_2", "DHEQ_GE.Puberty_3", "DHEQ_GE.Puberty_4", "DHEQ_GE.Puberty_5", "DHEQ_GE.Puberty_6",
+          "DHEQ_HD.Puberty_1", "DHEQ_HD.Puberty_2", "DHEQ_HD.Puberty_3", "DHEQ_HD.Puberty_4", "DHEQ_HD.Puberty_5", "DHEQ_HD.Puberty_6",
+          "DHEQ_Vic.Puberty_1", "DHEQ_Vic.Puberty_2", "DHEQ_Vic.Puberty_3", "DHEQ_Vic.Puberty_4",
+          "DHEQ_Vig.Puberty_1", "DHEQ_Vig.Puberty_2", "DHEQ_Vig.Puberty_3", "DHEQ_Vig.Puberty_4", "DHEQ_Vig.Puberty_5", "DHEQ_Vig.Puberty_6",
+          "DHEQ_FO.Puberty_1", "DHEQ_FO.Puberty_2", "DHEQ_FO.Puberty_3", "DHEQ_FO.Puberty_4", "DHEQ_FO.Puberty_5", "DHEQ_FO.Puberty_6",
+          "DHEQ_VT.Puberty_1", "DHEQ_VT.Puberty_2", "DHEQ_VT.Puberty_3", "DHEQ_VT.Puberty_4", "DHEQ_VT.Puberty_5", "DHEQ_VT.Puberty_6",
+          "DHEQ_I.Puberty_1", "DHEQ_I.Puberty_2", "DHEQ_I.Puberty_3", "DHEQ_I.Puberty_4")])
+print(DHEQ_v3_Total_alpha$total)
+```
+
+## DHEQ Version 4
+```{r}
+## Create new db for this version
+dbv4 <- db
+
+## making zero and one equal zero, and two through five equal one
+vars <- c("DHEQ_GE.Puberty_1", "DHEQ_GE.Puberty_2", "DHEQ_GE.Puberty_3", "DHEQ_GE.Puberty_4", "DHEQ_GE.Puberty_5", "DHEQ_GE.Puberty_6",
+          "DHEQ_HD.Puberty_1", "DHEQ_HD.Puberty_2", "DHEQ_HD.Puberty_3", "DHEQ_HD.Puberty_4", "DHEQ_HD.Puberty_5", "DHEQ_HD.Puberty_6",
+          "DHEQ_Vic.Puberty_1", "DHEQ_Vic.Puberty_2", "DHEQ_Vic.Puberty_3", "DHEQ_Vic.Puberty_4",
+          "DHEQ_Vig.Puberty_1", "DHEQ_Vig.Puberty_2", "DHEQ_Vig.Puberty_3", "DHEQ_Vig.Puberty_4", "DHEQ_Vig.Puberty_5", "DHEQ_Vig.Puberty_6",
+          "DHEQ_FO.Puberty_1", "DHEQ_FO.Puberty_2", "DHEQ_FO.Puberty_3", "DHEQ_FO.Puberty_4", "DHEQ_FO.Puberty_5", "DHEQ_FO.Puberty_6",
+          "DHEQ_VT.Puberty_1", "DHEQ_VT.Puberty_2", "DHEQ_VT.Puberty_3", "DHEQ_VT.Puberty_4", "DHEQ_VT.Puberty_5", "DHEQ_VT.Puberty_6",
+          "DHEQ_I.Puberty_1", "DHEQ_I.Puberty_2", "DHEQ_I.Puberty_3", "DHEQ_I.Puberty_4")
+
+dbv4[, (vars) := lapply(.SD, function(x) as.numeric(as.character(x))), .SDcols = vars]
+
+dbv4[, (vars) := lapply(.SD, function(x) ifelse(x <= 1, 0, 1)), .SDcols = vars]
+
+## Gender expression sum
+dbv4[, DHEQ_V4_GE_sum := rowMeans(.SD, na.rm = TRUE)*6,
+     .SDcols = c("DHEQ_GE.Puberty_1", "DHEQ_GE.Puberty_2", "DHEQ_GE.Puberty_3", "DHEQ_GE.Puberty_4", "DHEQ_GE.Puberty_5", "DHEQ_GE.Puberty_6")]
+summary(dbv4$DHEQ_V4_GE_sum)
+sd(dbv4$DHEQ_V4_GE_sum, na.rm = TRUE)
+
+## Harassment and discrimination sum
+dbv4[, DHEQ_V4_HD_sum := rowMeans(.SD, na.rm = TRUE)*6,
+     .SDcols = c("DHEQ_HD.Puberty_1", "DHEQ_HD.Puberty_2", "DHEQ_HD.Puberty_3", "DHEQ_HD.Puberty_4", "DHEQ_HD.Puberty_5", "DHEQ_HD.Puberty_6")]
+summary(dbv4$DHEQ_V4_HD_sum)
+sd(dbv4$DHEQ_V4_HD_sum, na.rm = TRUE)
+
+## Victimization sum
+dbv4[, DHEQ_V4_Vic_sum := rowMeans(.SD, na.rm = TRUE)*4,
+     .SDcols = c("DHEQ_Vic.Puberty_1", "DHEQ_Vic.Puberty_2", "DHEQ_Vic.Puberty_3", "DHEQ_Vic.Puberty_4")]
+summary(dbv4$DHEQ_V4_Vic_sum)
+sd(dbv4$DHEQ_V4_Vic_sum, na.rm = TRUE)
+
+## Vigilance sum
+dbv4[, DHEQ_V4_Vig_sum := rowMeans(.SD, na.rm = TRUE)*6,
+     .SDcols = c("DHEQ_Vig.Puberty_1", "DHEQ_Vig.Puberty_2", "DHEQ_Vig.Puberty_3", "DHEQ_Vig.Puberty_4", "DHEQ_Vig.Puberty_5", "DHEQ_Vig.Puberty_6")]
+summary(dbv4$DHEQ_V4_Vig_sum)
+sd(dbv4$DHEQ_V4_Vig_sum, na.rm = TRUE)
+
+## Family of origin sum
+dbv4[, DHEQ_V4_FO_sum := rowMeans(.SD, na.rm = TRUE)*6,
+     .SDcols = c("DHEQ_FO.Puberty_1", "DHEQ_FO.Puberty_2", "DHEQ_FO.Puberty_3", "DHEQ_FO.Puberty_4", "DHEQ_FO.Puberty_5", "DHEQ_FO.Puberty_6")]
+summary(dbv4$DHEQ_V4_FO_sum)
+sd(dbv4$DHEQ_V4_FO_sum, na.rm = TRUE)
+
+## Vicarious trauma sum
+dbv4[, DHEQ_V4_VT_sum := rowMeans(.SD, na.rm = TRUE)*6,
+     .SDcols = c("DHEQ_VT.Puberty_1", "DHEQ_VT.Puberty_2", "DHEQ_VT.Puberty_3", "DHEQ_VT.Puberty_4", "DHEQ_VT.Puberty_5", "DHEQ_VT.Puberty_6")]
+summary(dbv4$DHEQ_V4_VT_sum)
+sd(dbv4$DHEQ_V4_VT_sum, na.rm = TRUE)
+
+## Isolation sum
+dbv4[, DHEQ_V4_I_sum := rowMeans(.SD, na.rm = TRUE)*4,
+     .SDcols = c("DHEQ_I.Puberty_1", "DHEQ_I.Puberty_2", "DHEQ_I.Puberty_3", "DHEQ_I.Puberty_4")]
+
+```
+
+# YASB 
+```{r}
+## reversal 
+db[, YASB_3 := (6 - YASB_3)]
+db[, YASB_6 := (6 - YASB_6)]
+db[, YASB_10 := (6 - YASB_10)]
+db[, YASB_14 := (6 - YASB_14)]
+
+## alpha
+YASB_alpha <- alpha(db[, c("YASB_1", "YASB_2", "YASB_3", "YASB_4", "YASB_5", "YASB_6", "YASB_7", "YASB_8", "YASB_9", "YASB_10", "YASB_11", "YASB_12", "YASB_13", "YASB_14")]) 
+
+print(YASB_alpha$total)
+
+## relational aggression total (sum)
+db[, YASB_RelAg := rowMeans(.SD, na.rm = TRUE)*5,
+     .SDcols = c("YASB_1", "YASB_2", "YASB_9", "YASB_11", "YASB_13")]
+summary(db$YASB_RelAg)
+sd(db$YASB_RelAg, na.rm = TRUE)
+
+## social aggression total (sum)
+db[, YASB_SocAg := rowMeans(.SD, na.rm = TRUE)*5,
+     .SDcols = c("YASB_4", "YASB_5", "YASB_7", "YASB_8", "YASB_12")]
+summary(db$YASB_SocAg)
+sd(db$YASB_SocAg, na.rm = TRUE)
+
+## interpersonal maturity total (sum)
+db[, YASB_Mat := rowMeans(.SD, na.rm = TRUE)*4,
+     .SDcols = c("YASB_3", "YASB_6", "YASB_10", "YASB_14")]
+summary(db$YASB_Mat)
+sd(db$YASB_Mat, na.rm = TRUE)
+
+```
+
+# Correlation
+
+Run the above code to get the scoring of all questionnaires, and then proceed with the following to get correlations. Ensure to use dbv3 as the 3rd version of the DHEQ is used
+
+```{r}
+library(knitr)
+library(kableExtra)
+
+social_support_matrix <- round(cor(dbv3[, .(SCSR2_Total, SCSR1_Total, SSES_Avg, SSGLBT_Avg, MSPSS_P_TOTAL, MSPSS_C_TOTAL, FCS_PAvg, FCS_CAvg)]), 2)
+
+kable(social_support_matrix, caption = "Social Support Matrix", booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "hold_position"), font_size = 12) %>%
+  column_spec(1, bold = TRUE) %>%
+  save_kable(file = "social_correlation_table.html")
+
+minority_stress_matrix <- round(cor(dbv3[, .(EDS_Total, DHEQ_V3_GE_Avg, DHEQ_V3_HD_Avg, DHEQ_V3_Vic_Avg, DHEQ_V3_Vig_Avg, DHEQ_V3_FO_Avg, DHEQ_V3_VT_Avg, DHEQ_V3_I_Avg, DHEQ_V3_Total_Avg)]), 2)
+
+kable(minority_stress_matrix, caption = "Minority Stress Matrix", booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "hold_position"), font_size = 12) %>%
+  column_spec(1, bold = TRUE) %>%
+  save_kable(file = "minority_correlation_table.html")
+```
+# Contrasts
+
+```{r}
+## self-connected descriptives
+as.numeric(db$Post.Vid.Qs_1)
+summary(db$Post.Vid.Qs_1)
+sd(db$Post.Vid.Qs_1, na.rm = TRUE)
+
+## self-disconnected descriptives
+as.numeric(db$Post.Vid.Qs_2)
+summary(db$Post.Vid.Qs_2)
+sd(db$Post.Vid.Qs_2, na.rm = TRUE)
+
+## other descriptives
+as.numeric(db$Post.Vid.Qs_3)
+summary(db$Post.Vid.Qs_3)
+sd(db$Post.Vid.Qs_3, na.rm = TRUE)
+
+## stress to make your video decriptives
+as.numeric(db$Post.Vid.Qs_5)
+summary(db$Post.Vid.Qs_5)
+sd(db$Post.Vid.Qs_5, na.rm = TRUE)
+
+## stress if friends saw your video descriptives
+as.numeric(db$Post.Vid.Qs_6)
+summary(db$Post.Vid.Qs_6)
+sd(db$Post.Vid.Qs_6, na.rm = TRUE)
+
+## how good was your video descriptives
+as.numeric(db$Own.Vid)
+summary(db$Own.Vid)
+sd(db$Own.Vid, na.rm = TRUE)
+
+## how good was the other person's video descriptives
+as.numeric(db$Peer.vid)
+summary(db$Peer.vid)
+sd(db$Peer.vid, na.rm = TRUE)
+
+## contrasts
+## self connected - self disconnected
+db[, Disconnect_contrast := Post.Vid.Qs_1 - Post.Vid.Qs_2]
+summary(db$Disconnect_contrast)
+sd(db$Disconnect_contrast)
+
+## self connected - other
+db[, Other_contrast := Post.Vid.Qs_1 - Post.Vid.Qs_3]
+summary(db$Other_contrast)
+sd(db$Other_contrast)
+```
+
+# data visualisation
+```{r}
+library(ggplot2)
+# u curve function
+inv_u_curve <- function(x, a, b, c) {
+  y <- -(x-a)^2 + b*(x-a) + c
+  return(y)
+}
+x_min <- 0
+x_max <- 10
+x <- seq(x_min, x_max, length.out = 100)
+
+# non linear sequence
+a_inv_u <- (x_min + x_max)/2   
+b_inv_u <- 0.2                 
+c_inv_u <- 6                 
+y_inv_u <- inv_u_curve(x, a = a_inv_u, b = b_inv_u, c = c_inv_u)
+
+# slope and intercept linear relationship
+m_lin <- 0.5
+b_lin <- 0
+y_lin <- m_lin * x + b_lin
+
+# data frame non linear
+data_inv_u <- data.frame(x = x, y = y_inv_u)
+
+# data frame linear
+data_lin <- data.frame(x = x, y = y_lin)
+
+# non linear data
+set.seed(123) 
+n_inv_u <- 50 
+x_inv_u <- runif(n_inv_u, min = x_min, max = x_max)
+y_inv_u <- inv_u_curve(x_inv_u, a = a_inv_u, b = b_inv_u, c = c_inv_u)
+data_inv_u_points <- data.frame(x = x_inv_u, y = y_inv_u)
+
+# linear data
+set.seed(456) 
+n_lin <- 50    
+x_lin <- runif(n_lin, min = x_min, max = x_max)
+y_lin <- m_lin * x_lin + b_lin
+data_lin_points <- data.frame(x = x_lin, y = y_lin)
+
+# visualisation
+ggplot() +
+  geom_line(data = data_inv_u, aes(x = x, y = y), color = "#2E74AA") +
+  geom_line(data = data_lin, aes(x = x, y = y), color = "#FF9339") +
+  labs(x = "Minority Stress Experiences / Depressive Symptoms", y = "Biological and Subjective Stress Reactivity") +
+  coord_cartesian(xlim = c(x_min, x_max), ylim = c(0, 7)) + 
+   ggtitle("Hypothetical Relationships between Minority Stress Experiences 
+                      and Reactivity to Social Stressor") +
+  geom_text(aes(x = 2.5, y = 5.8, label = "Non-linear representation 
+(exploratory hypothesis)"), color = "#2E74AA", size = 5) +
+  geom_text(aes(x = 9, y = 3.25, label = "Linear representation"), color = "#FF9339", size = 5) +
+  annotate(geom = "curve", x = 2, y = 5.1, xend = 3.5, yend = 4, curvature = .2, arrow = arrow(length = unit(2, "mm")), color = "#2E74AA") +
+  annotate(geom = "curve", x = 9, y = 3.39, xend = 8.3, yend = 3.8, curvature = .2, arrow = arrow(length = unit(2, "mm")), color = "#FF9339")+
+  theme_classic()
+ggsave("hypothetical_diagram.png", width = 8, height = 6, dpi = 300)
+
+```
+# Import
+
+```{r}
+library(haven)
+library(data.table)
+library(JWileymisc)
+library(psych)
+library(ggplot2)
+
+db <- as.data.table(read.csv("experimental_data_COPYforR.csv"))
+```
+
+# data visualisation
+```{r}
+f <- function(x) 0 + (1*x) - (1*x*x)
+tmp <- data.frame(x=0:1, y=f(0:1))
+
+line_df <- data.frame(x = c(0, 1), y = c(0, 0.4))
+
+# visualisation
+p <- ggplot() + 
+  geom_line(data = line_df, aes(x = x, y = y), color = "#FF9339") +
+  stat_function(data = tmp, fun = f, color = "#2E74AA") + 
+  xlab("Minority Stress Experiences / Depressive Symptoms") + ylab("Biological and Subjective Stress Reactivity") +
+  ggtitle("                 Hypothetical Relationships between Minority Stress Experiences 
+                                        and Reactivity to Social Stressor") +
+  geom_text(aes(x = 0.12, y = 0.25, label = "Non-linear representation 
+(exploratory hypothesis)"), color = "#2E74AA", size = 4) +
+  geom_text(aes(x = 0.9, y = 0.23, label = "Linear representation"), color = "#FF9339", size = 4) +
+  annotate(geom = "curve", x = 0.1, y = 0.21, xend = 0.15, yend = 0.18, curvature = .2, arrow = arrow(length = unit(2, "mm")), color = "#2E74AA") +
+  annotate(geom = "curve", x = 0.82, y = 0.24, xend = 0.75, yend = 0.28, curvature = .2, arrow = arrow(length = unit(2, "mm")), color = "#FF9339")+
+ theme_classic()
+p <- p + theme(axis.text.x = element_blank(),
+               axis.text.y = element_blank())
+ggsave("hypothetical_diagram.png", width = 8, height = 6, dpi = 300)
+
+p
+```
+
+
+# s1 and s2 differences
+```{r}
+db$agediff <- db$session2_age - db$session1_age
+summary(db$agediff) ## mean age diff btwn s1 and s2
+0.17507*52.14 ## difference in weeks btwn s1 and s2
+```
+
+```{r}
+write.csv(db, "experimental_scored_data.csv") ## get rid of all the items, one of the arguments say what the columns are; make a dbv4
+```
+
