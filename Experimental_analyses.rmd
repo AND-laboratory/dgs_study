@@ -1,6 +1,6 @@
 ---
 title: "DGS - Paper components"
-author: "Rachael Martin"
+author: "Rachael Martin / Michelle Byrne"
 date: "`r Sys.Date()`"
 output:
   tufte::tufte_html: 
@@ -15,8 +15,13 @@ library(haven)
 library(data.table)
 library(JWileymisc)
 library(psych)
+library(ggplot2)
+library(ggpubr)
+library(ggthemes)
+library(scales)
+library(ggExtra)
 
-db <- as.data.table(read.csv("experimental_scored_data.csv"))
+db <- as.data.table(read.csv("S:/MNHS-Psych/ANDL-Lab-DGS-Study/data_for_manuscripts/tim_task_paper/experimental_scored_data.csv"))
 ```
 
 # hypotheses diagram
@@ -26,7 +31,7 @@ tmp <- data.frame(x=0:1, y=f(0:1))
 
 line_df <- data.frame(x = c(0, 1), y = c(0, 0.4))
 
-# visualisation
+# visualization of Hypothesis 1
 p <- ggplot() + 
   geom_line(data = line_df, aes(x = x, y = y), color = "#FF9339") +
   stat_function(data = tmp, fun = f, color = "#2E74AA") + 
@@ -45,10 +50,131 @@ ggsave("hypothetical_diagram.png", width = 8, height = 6, dpi = 300)
 
 p
 ```
-# template for analysis
 
+# Template for analysis
+
+First some visual exploration of the data (not hypothesis testing)
 Note. Ensure the database with the dheq v3 scoring is used
-```{r}
+```{r exploration}
+
+#### Direct effects of minority stress (EDS) on depression ####
+
+m1 <- lm(EDS_Total ~ DASS21_CDepressionFINAL, data = db)
+summary(m1)
+cor.test(~ EDS_Total + DASS21_CDepressionFINAL, data = db)
+
+# Check model diagnostics
+plot(modelDiagnostics(m1), nrow = 2, ncol = 2, ask = FALSE)
+
+# Residuals distribution ok (and no outliers) but not homogeneity
+# Try transforming DASS depression
+m1_t1 <- lm(EDS_Total ~ log(DASS21_CDepressionFINAL), data = db)
+summary(m1_t1)
+plot(modelDiagnostics(m1_t1), nrow = 2, ncol = 2, ask = FALSE)
+
+# Homogeneity still violated, try transforming EDS as well
+m1_t2 <- lm(log(EDS_Total) ~ log(DASS21_CDepressionFINAL), data = db)
+plot(modelDiagnostics(m1_t2), nrow = 2, ncol = 2, ask = FALSE)
+
+# Both EDS and DASS depression now transformed in database:
+db[, logEDS_Total := log(EDS_Total)]
+db[, logDASS21_CDepressionFINAL := log(DASS21_CDepressionFINAL)]
+
+# Model 1 results (lm and correlation)
+summary(m1_t2)
+cor.test(~ logEDS_Total + logDASS21_CDepressionFINAL, data = db)
+
+# scatterplot with transformed variables, with histograms
+p.m1_t2 <- ggplot(db, aes(logEDS_Total, logDASS21_CDepressionFINAL)) +
+  geom_point() +
+  stat_smooth(method = "lm", se = FALSE, size = 1) + 
+#  scale_x_continuous(breaks = as.numeric(quantile(db$logEDS_Total))) + 
+#  scale_y_continuous(breaks = as.numeric(quantile(db$logDASS21_CDepressionFINAL))) +   
+  theme_pubr() +   
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() +
+  xlab("Everyday Discrimination Scale (transformed)") +
+  ylab("Depressive Symptoms (transformed)") +
+  annotate("text", x = max(db$logEDS_Total), y = max(db$logDASS21_CDepressionFINAL),
+           label = "r = 0.33, p = .03",
+           size = 6, hjust = 1, vjust = 19)
+
+ggMarginal(p.m1_t2, type = "histogram")
+
+#### Direct effects of minority stress (DHEQ) on depression ####
+
+m2 <- lm(DHEQ_V3_Total_Avg ~ DASS21_CDepressionFINAL, data = db)
+summary(m2)
+cor.test(~ DHEQ_V3_Total_Avg + DASS21_CDepressionFINAL, data = db)
+
+# Check model diagnostics - note - tried transforming one or both and all worse, so keep untransformed
+plot(modelDiagnostics(m2), nrow = 2, ncol = 2, ask = FALSE)
+
+# scatterplot with with histograms
+p.m2 <- ggplot(db, aes(DHEQ_V3_Total_Avg, DASS21_CDepressionFINAL)) +
+  geom_point() +
+  stat_smooth(method = "lm", se = FALSE, size = 1) + 
+  theme_pubr() +   
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() +
+  xlab("Daily Heterosexist Experiences Questionnaire") +
+  ylab("Depressive Symptoms") +
+  annotate("text", x = max(db$DHEQ_V3_Total_Avg), y = max(db$DASS21_CDepressionFINAL),
+           label = "r = 0.42, p = .004",
+           size = 6, hjust = 1, vjust = 20)
+
+ggMarginal(p.m2, type = "histogram")
+
+#### Direct effects of overall social support (MSPSS) on depression ####
+m3 <- lm(MSPSS_C_TOTAL ~ DASS21_CDepressionFINAL, data = db)
+summary(m3)
+cor.test(~ MSPSS_C_TOTAL + DASS21_CDepressionFINAL, data = db)
+
+# model diagnostics - the one with nothing transformed still looks best (m3)
+plot(modelDiagnostics(m3), nrow = 2, ncol = 2, ask = FALSE)
+
+m3_t2 <- lm(log(MSPSS_C_TOTAL) ~ log(DASS21_CDepressionFINAL), data = db)
+plot(modelDiagnostics(m3_t2), nrow = 2, ncol = 2, ask = FALSE)
+m3_t1 <- lm(MSPSS_C_TOTAL ~ log(DASS21_CDepressionFINAL), data = db)
+plot(modelDiagnostics(m3_t1), nrow = 2, ncol = 2, ask = FALSE)
+m3_t1a <- lm(log(MSPSS_C_TOTAL) ~ DASS21_CDepressionFINAL, data = db)
+plot(modelDiagnostics(m3_t1a), nrow = 2, ncol = 2, ask = FALSE)
+
+p.m3 <- ggplot(db, aes(MSPSS_C_TOTAL, DASS21_CDepressionFINAL)) +
+  geom_point() +
+  stat_smooth(method = "lm", se = FALSE, size = 1) + 
+  theme_pubr() +   
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() +
+  xlab("Multidimensional Scale of Perceived Social Support") +
+  ylab("Depressive Symptoms") +
+  annotate("text", x = max(db$DHEQ_V3_Total_Avg), y = max(db$DASS21_CDepressionFINAL),
+           label = "r = -0.44, p = .002",
+           size = 6, hjust = 0.5, vjust = 20)
+
+ggMarginal(p.m3, type = "histogram")
+
+#### Direct effects of significant other social support (MSPSS_C_SO) on depression ####
+cor.test(~ MSPSS_C_SO + DASS21_CDepressionFINAL, data = db)
+
+#### Direct effects of family social support (MSPSS_C_Fa) on depression ####
+cor.test(~ MSPSS_C_Fa + DASS21_CDepressionFINAL, data = db)
+
+#### Direct effects of friends social support (MSPSS_C_Fr) on depression ####
+cor.test(~ MSPSS_C_Fr + DASS21_CDepressionFINAL, data = db)
+
+#### Direct effects of family connectedness (FCS) on depression ####
+cor.test(~ FCS_CAvg + DASS21_CDepressionFINAL, data = db)
+
+#### Direct effects of school social support (SSES) on depression ####
+cor.test(~ SSES_Avg + DASS21_CDepressionFINAL, data = db) 
+
+
+```
+
+
+Now test the Hypotheses 1a, 1b, 1a alt, 1b alt, 2a, 2b
+```{r hypotheses}
 # 1a. reactivity ~ minority stress experiences
 ## EDS ~ reactivity
 lm_EDS_disconnect <- lm(Disconnect_contrast ~ EDS_Total, data = db) ## flip these to make EDS x and stress Y
@@ -94,7 +220,8 @@ poly_DASS_CRP <- lm( ~ poly(DASS21_CDepressionFINAL, 2), data = db)
 poly_DASS_DHEA <- lm( ~ poly(DASS21_CDepressionFINAL, 2), data = db)
 
 # 2a reactivity ~ social support x minority stress
-
+int_m <- lm(DASS21_CDepressionFINAL ~ DHEQ_V3_Total_Avg * FCS_CAvg, data = db)
+summary(int_m)
 ```
 
 
