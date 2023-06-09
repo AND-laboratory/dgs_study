@@ -146,70 +146,244 @@ p.m3 <- ggplot(db, aes(MSPSS_C_TOTAL, DASS21_CDepressionFINAL)) +
   theme_pubr() +   
   theme(axis.line = element_blank()) +
   geom_rangeframe() +
-  xlab("Multidimensional Scale of Perceived Social Support") +
+  xlab("Perceived Social Support - Total") +
   ylab("Depressive Symptoms") +
-  annotate("text", x = max(db$DHEQ_V3_Total_Avg), y = max(db$DASS21_CDepressionFINAL),
+  annotate("text", x = max(db$MSPSS_C_TOTAL), y = max(db$DASS21_CDepressionFINAL),
            label = "r = -0.44, p = .002",
            size = 6, hjust = 0.5, vjust = 20)
 
 ggMarginal(p.m3, type = "histogram")
 
 #### Direct effects of significant other social support (MSPSS_C_SO) on depression ####
+m4 <- lm(MSPSS_C_SO ~ DASS21_CDepressionFINAL, data = db)
+summary(m4)
 cor.test(~ MSPSS_C_SO + DASS21_CDepressionFINAL, data = db)
+plot(modelDiagnostics(m4), nrow = 2, ncol = 2, ask = FALSE)
+p.m4 <- ggplot(db, aes(MSPSS_C_SO, DASS21_CDepressionFINAL)) +
+  geom_point() +
+  stat_smooth(method = "lm", se = FALSE, size = 1) + 
+  theme_pubr() +   
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() +
+  xlab("Perceived Social Support - Significant Other") +
+  ylab("Depressive Symptoms") +
+  annotate("text", x = max(db$MSPSS_C_SO), y = max(db$DASS21_CDepressionFINAL),
+           label = "r = -0.45, p = .002",
+           size = 6, hjust = 0.8, vjust = 20)
+
+ggMarginal(p.m4, type = "histogram")
 
 #### Direct effects of family social support (MSPSS_C_Fa) on depression ####
+m5 <- lm(MSPSS_C_Fa ~ DASS21_CDepressionFINAL, data = db)
+summary(m5)
 cor.test(~ MSPSS_C_Fa + DASS21_CDepressionFINAL, data = db)
+plot(modelDiagnostics(m5), nrow = 2, ncol = 2, ask = FALSE) # not great!
+p.m5 <- ggplot(db, aes(MSPSS_C_Fa, DASS21_CDepressionFINAL)) +
+  geom_point() +
+  stat_smooth(method = "lm", se = FALSE, size = 1) + 
+  theme_pubr() +   
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() +
+  xlab("Perceived Social Support - Family") +
+  ylab("Depressive Symptoms") +
+  annotate("text", x = max(db$MSPSS_C_Fa), y = max(db$DASS21_CDepressionFINAL),
+           label = "r = -0.47, p = .001",
+           size = 6, hjust = 0.8, vjust = 20)
+
+ggMarginal(p.m5, type = "histogram")
 
 #### Direct effects of friends social support (MSPSS_C_Fr) on depression ####
-cor.test(~ MSPSS_C_Fr + DASS21_CDepressionFINAL, data = db)
+m6 <- lm(MSPSS_C_Fr ~ DASS21_CDepressionFINAL, data = db)
+summary(m6)
+cor.test(~ MSPSS_C_Fr + DASS21_CDepressionFINAL, data = db) # not significant
+plot(modelDiagnostics(m6), nrow = 2, ncol = 2, ask = FALSE) # not great!
+
 
 #### Direct effects of family connectedness (FCS) on depression ####
+m7 <- lm(FCS_CAvg ~ DASS21_CDepressionFINAL, data = db)
+summary(m7)
 cor.test(~ FCS_CAvg + DASS21_CDepressionFINAL, data = db)
+plot(modelDiagnostics(m7), nrow = 2, ncol = 2, ask = FALSE) # not great!
+p.m7 <- ggplot(db, aes(FCS_CAvg, DASS21_CDepressionFINAL)) +
+  geom_point() +
+  stat_smooth(method = "lm", se = FALSE, size = 1) + 
+  theme_pubr() +   
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() +
+  xlab("Family Connectedness") +
+  ylab("Depressive Symptoms") +
+  annotate("text", x = max(db$FCS_CAvg), y = max(db$DASS21_CDepressionFINAL),
+           label = "r = -0.42, p = .005",
+           size = 6, hjust = 1.2, vjust = 20)
+
+ggMarginal(p.m7, type = "histogram")
 
 #### Direct effects of school social support (SSES) on depression ####
-cor.test(~ SSES_Avg + DASS21_CDepressionFINAL, data = db) 
+m8 <- lm(SSES_Avg ~ DASS21_CDepressionFINAL, data = db)
+summary(m8)
+cor.test(~ SSES_Avg + DASS21_CDepressionFINAL, data = db)
+plot(modelDiagnostics(m8), nrow = 2, ncol = 2, ask = FALSE) # meh
+p.m8 <- ggplot(db, aes(SSES_Avg, DASS21_CDepressionFINAL)) +
+  geom_point() +
+  stat_smooth(method = "lm", se = FALSE, size = 1) + 
+  theme_pubr() +   
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() +
+  xlab("Supportive School Environment") +
+  ylab("Depressive Symptoms") +
+  annotate("text", x = max(db$SSES_Avg), y = max(db$DASS21_CDepressionFINAL),
+           label = "r = -0.30, p = .04",
+           size = 6, hjust = 1.2, vjust = 20)
 
+ggMarginal(p.m8, type = "histogram")
 
+# Multiple regression of all types of support
+m9 <- lm(DASS21_CDepressionFINAL ~ SSES_Avg + FCS_CAvg + MSPSS_C_TOTAL, data = db)
+summary(m9)
+
+# Multiple regression of all types of minority stress
+m10 <- lm(DASS21_CDepressionFINAL ~ EDS_Total + DHEQ_V3_Total_Avg, data = db)
+summary(m10)
+
+# Multiple regression of everything
+m11 <- lm(DASS21_CDepressionFINAL ~ SSES_Avg + FCS_CAvg + MSPSS_C_TOTAL + EDS_Total + DHEQ_V3_Total_Avg, data = db)
+summary(m11)
 ```
 
 
 Now test the Hypotheses 1a, 1b, 1a alt, 1b alt, 2a, 2b
-```{r hypotheses}
+```{r hypotheses aim 1}
 # 1a. reactivity ~ minority stress experiences
-## EDS ~ reactivity
-lm_EDS_disconnect <- lm(Disconnect_contrast ~ EDS_Total, data = db) ## flip these to make EDS x and stress Y
+
+# Post.Vid.Qs_1 = self-connected stress
+# Post.Vid.Qs_2 = self-disconnected stress
+# Post.Vid.Qs_3 = Other stress
+# Post.Vid.Qs_5 = stress to make your own video
+# Post.Vid.Qs_6 = stress if friends saw video
+# Own.Vid = how good was your video
+# Peer.vid = How good was other video
+# Disconnect_contrast = self-connected rating - self-disconnected rating
+# Other_contrast = self-connected rating - Other rating
+
+## EDS ~ subjective reactivity: Linear
+lm_EDS_disconnect <- lm(Disconnect_contrast ~ EDS_Total, data = db) 
+summary(lm_EDS_disconnect)
 lm_EDS_other <- lm(Other_contrast ~ EDS_Total, data = db)
+summary(lm_EDS_other)
+lm_EDS_SC <- lm(Post.Vid.Qs_1 ~ EDS_Total, data = db)
+summary(lm_EDS_SC)
+lm_EDS_make <- lm(Post.Vid.Qs_5 ~ EDS_Total, data = db)
+summary(lm_EDS_make)
+lm_EDS_friends <- lm(Post.Vid.Qs_6 ~ EDS_Total, data = db)
+summary(lm_EDS_friends)
+
+## Since subjective reactivity scores are ordinal, better to use Jonckheere-Terpstra test
+library(DescTools)
+JonckheereTerpstraTest(db$EDS_Total, db$Disconnect_contrast, alternative = c("two.sided"))
+
+
+## EDS ~ physio/bio reactivity: Linear
 lm_EDS_HR <- lm( ~ EDS_Total, data = db)
 lm_EDS_CRP <- lm( ~ EDS_Total , data = db)
-lm_EDS_DHEA <- lm( ~ EDS_Total , data = db) ## make a list for michelle what we need still
-## DHEQ ~ reactivity
+lm_EDS_DHEA <- lm( ~ EDS_Total , data = db) 
+
+## DHEQ ~ subjective reactivity: Linear
 lm_DHEQ_disconnect <- lm(Disconnect_contrast ~ DHEQ_V3_Total_Avg, data = db)
+summary(lm_DHEQ_disconnect)
 lm_DHEQ_other <- lm(Other_contrast ~ DHEQ_V3_Total_Avg, data = db)
+summary(lm_DHEQ_disconnect)
+lm_DHEQ_SC <- lm(Post.Vid.Qs_1 ~ log(DHEQ_V3_Total_Avg), data = db)
+summary(lm_DHEQ_SC) # maybe - p = .038 with logDHEQ
+lm_DHEQ_make <- lm(Post.Vid.Qs_5 ~ DHEQ_V3_Total_Avg, data = db)
+summary(lm_DHEQ_make)
+lm_DHEQ_friends <- lm(Post.Vid.Qs_6 ~ DHEQ_V3_Total_Avg, data = db)
+summary(lm_DHEQ_friends)
+
+db[, logDHEQ_V3_Total_Avg := log(DHEQ_V3_Total_Avg)]
+plot(modelDiagnostics(lm_DHEQ_SC), nrow = 2, ncol = 2, ask = FALSE) # not great!
+p.lm_DHEQ_SC <- ggplot(db, aes(Post.Vid.Qs_1, logDHEQ_V3_Total_Avg)) +
+  geom_point() +
+  stat_smooth(method = "glm", se = FALSE, size = 1) + 
+  theme_pubr() +   
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() +
+  xlab("Self-connected stress") +
+  ylab("log(DHEQ)") +
+  annotate("text", x = max(db$Post.Vid.Qs_1), y = max(db$logDHEQ_V3_Total_Avg),
+           label = "r = xx, p = .04",
+           size = 6, hjust = 1.2, vjust = 20)
+ggMarginal(p.lm_DHEQ_SC, type = "histogram")
+
+JonckheereTerpstraTest(db$Post.Vid.Qs_1, db$logDHEQ_V3_Total_Avg, alternative = c("two.sided"))
+
+## DHEQ ~ physio/bio reactivity: Linear
 lm_DHEQ_HR <- lm( ~ DHEQ_V3_Total_Avg, data = db)
 lm_DHEQ_CRP <- lm( ~ DHEQ_V3_Total_Avg, data = db)
 lm_DHEQ_DHEA <- lm( ~ DHEQ_V3_Total_Avg , data = db)
 
-# 1a. exploratory: reactivity ~ poly, 2(minority stress experiences)
-## EDS ~ reactivity
-poly_EDS_disconnect <- lm(Disconnect_contrast ~ poly(EDS_Total, 2), data = db)
-poly_EDS_other <- lm(Other_contrast ~ poly(EDS_Total, 2), data = db)
-poly_EDS_HR <- lm( ~ poly(EDS_Total, 2), data = db)
-poly_EDS_CRP <- lm( ~ poly(EDS_Total, 2), data = db)
-poly_EDS_DHEA <- lm( ~ poly(EDS_Total, 2), data = db)
-## DHEQ ~ reactivity
-poly_DHEQ_disconnect <- lm(Disconnect_contrast ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
-poly_DHEQ_other <- lm(Other_contrast ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
-poly_DHEQ_HR <- lm( ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
-poly_DHEQ_CRP <- lm( ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
-poly_DHEQ_DHEA <- lm( ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
-
-# 1b. reactivity ~ depression
+# 1b. subjective reactivity ~ depression: Linear
 lm_DASS_disconnect <- lm(Disconnect_contrast ~ DASS21_CDepressionFINAL, data = db)
-lm_EDS_other <- lm(Other_contrast ~ DASS21_CDepressionFINAL, data = db)
+summary(lm_DASS_disconnect)
+lm_DASS_other <- lm(Other_contrast ~ DASS21_CDepressionFINAL, data = db)
+
+# 1b physio/bio reactivity ~ depression: Linear
 lm_EDS_HR_disconnect <- lm( ~ DASS21_CDepressionFINAL, data = db)
 lm_EDS_HR_other <- lm( ~ DASS21_CDepressionFINAL, data = db)
 lm_EDS_CRP <- lm( ~ DASS21_CDepressionFINAL, data = db)
 lm_EDS_DHEA <- lm( ~ DASS21_CDepressionFINAL, data = db) 
+
+```
+
+
+```{r hypotheses aim 1 - exploratory (quad models)}
+# 1a. exploratory: reactivity ~ poly, 2(minority stress experiences)
+## EDS ~ subjective reactivity
+poly_EDS_disconnect <- lm(Disconnect_contrast ~ poly(EDS_Total, 2), data = db)
+summary(poly_EDS_disconnect)
+poly_EDS_other <- lm(Other_contrast ~ poly(EDS_Total, 2), data = db)
+summary(poly_EDS_other)
+poly_EDS_SC <- lm(Post.Vid.Qs_1 ~ poly(EDS_Total, 2), data = db)
+summary(lm_EDS_SC)
+poly_EDS_make <- lm(Post.Vid.Qs_5 ~ poly(EDS_Total, 2), data = db)
+summary(lm_EDS_make)
+poly_EDS_friends <- lm(Post.Vid.Qs_6 ~ poly(EDS_Total, 2), data = db)
+summary(lm_EDS_friends)
+
+## EDS ~ physio/bio reactivity
+poly_EDS_HR <- lm( ~ poly(EDS_Total, 2), data = db)
+poly_EDS_CRP <- lm( ~ poly(EDS_Total, 2), data = db)
+poly_EDS_DHEA <- lm( ~ poly(EDS_Total, 2), data = db)
+
+## DHEQ ~ subjective reactivity
+poly_DHEQ_disconnect <- lm(Disconnect_contrast ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
+summary(poly_DHEQ_disconnect) # sig
+poly_DHEQ_other <- lm(Other_contrast ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
+summary(poly_DHEQ_other)
+poly_DHEQ_SC <- lm(Post.Vid.Qs_1 ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
+summary(poly_DHEQ_SC) # sig barely haha
+poly_DHEQ_make <- lm(Post.Vid.Qs_5 ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
+summary(poly_DHEQ_make)
+poly_DHEQ_friends <- lm(Post.Vid.Qs_6 ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
+summary(poly_DHEQ_friends)
+
+plot(modelDiagnostics(poly_DHEQ_disconnect), nrow = 2, ncol = 2, ask = FALSE) # not great!
+p.poly_DHEQ_disconnect <- ggplot(db, aes(Disconnect_contrast, DHEQ_V3_Total_Avg)) +
+  geom_point() +
+  stat_smooth(method = "glm", se = FALSE, size = 1, formula = y ~ poly(x, 2)) + 
+  theme_pubr() +   
+  theme(axis.line = element_blank()) +
+  geom_rangeframe() +
+  xlab("Self-connected stress > Self-disconnected stress") +
+  ylab("DHEQ") +
+  annotate("text", x = max(db$Disconnect_contrast), y = max(db$DHEQ_V3_Total_Avg),
+           label = "p = .02",
+           size = 6, hjust = 1.2, vjust = 20)
+ggMarginal(p.poly_DHEQ_disconnect, type = "histogram")
+
+## DHEA ~ physio/bio reactivity
+poly_DHEQ_HR <- lm( ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
+poly_DHEQ_CRP <- lm( ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
+poly_DHEQ_DHEA <- lm( ~ poly(DHEQ_V3_Total_Avg, 2), data = db)
 
 # 1b exploratory: reactivity ~ poly, 2(depression)
 poly_DASS_disconnect <- lm(Disconnect_contrast ~ poly(DASS21_CDepressionFINAL, 2), data = db)
@@ -219,9 +393,12 @@ poly_DASS_HR_other <- lm( ~ poly(DASS21_CDepressionFINAL, 2), data = db)
 poly_DASS_CRP <- lm( ~ poly(DASS21_CDepressionFINAL, 2), data = db)
 poly_DASS_DHEA <- lm( ~ poly(DASS21_CDepressionFINAL, 2), data = db)
 
+```
+
+
+```{r hypotheses aim 2}
 # 2a reactivity ~ social support x minority stress
 int_m <- lm(DASS21_CDepressionFINAL ~ DHEQ_V3_Total_Avg * FCS_CAvg, data = db)
 summary(int_m)
 ```
-
 
